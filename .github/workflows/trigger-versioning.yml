@@ -47,5 +47,6 @@ jobs:
           git commit --allow-empty -am "version: automatic update"
           git tag v${{ needs.run-gitversion.outputs.ver }}
           git push
+          git push v${{ needs.run-gitversion.outputs.ver }}
 
 
