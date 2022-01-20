@@ -1,8 +1,10 @@
 mode: Mainline
+next-version: 0.0.0
 commit-message-incrementing: Enabled
 major-version-bump-message: "(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)!:"
 minor-version-bump-message: "(feat|perf):"
 patch-version-bump-message: "(fix|refactor|revert|style|test):"
+no-bump-message: "(git|docs|ci|chore):"
 branches: {}
 ignore:
   sha: []
