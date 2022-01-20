@@ -4,7 +4,7 @@ commit-message-incrementing: Enabled
 major-version-bump-message: "(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)!:"
 minor-version-bump-message: "(feat|perf):"
 patch-version-bump-message: "(fix|refactor|revert|style|test):"
-no-bump-message: "(git|docs|ci|chore):"
+no-bump-message: "(git|docs|ci|chore|version):"
 branches: {}
 ignore:
   sha: []

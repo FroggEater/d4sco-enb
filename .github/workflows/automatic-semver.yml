@@ -48,7 +48,7 @@ jobs:
         run: |
           git config --global user.name "FroggEater"
           git config --global user.email "bastien.froment@outlook.fr"
-          git commit -am "version: automatic update"
+          git commit --allow-empty -am "version: automatic update"
           git tag v${{ needs.run-gitversion.outputs.ver }}
           git push
 
