@@ -1,4 +1,4 @@
-# **Skyrim SE - D4SCO ENB - 0.1.0**
+# **Skyrim SE - D4SCO ENB - 1.0.0**
 
 Thank you for being curious and/or lost enough to check out my work - here's a quick rundown
 of the main information you'll need to understand what's going on :)
