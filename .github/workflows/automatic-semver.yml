@@ -26,7 +26,7 @@ jobs:
         id: gv
         uses: gittools/actions/gitversion/execute@v0.9.11
         with:
-          useConfigFiles: true
+          useConfigFile: true
           configFilePath: GitVersion.yml
   run-bump-file-version:
     name: Update version in files, commit and tag
