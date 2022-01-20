@@ -16,6 +16,8 @@ jobs:
       branch: ${{ steps.gv.outputs.branchName }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Fetch tags and branches history
         run: git fetch --prune
       - name: Setup GitVersion
