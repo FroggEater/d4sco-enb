@@ -1,6 +1,5 @@
 name: GitVersion Automatic Versioning
 on:
-  workflow_dispatch:
   pull_request:
     branches-ignore:
       - 'd4-*'
