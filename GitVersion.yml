@@ -3,8 +3,9 @@ commit-message-incrementing: Enabled
 major-version-bump-message: "(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)!:"
 minor-version-bump-message: "(feat|perf):"
 patch-version-bump-message: "(fix|refactor|revert|style|test):"
-no-bump-message: "(git|docs|ci|chore|version):"
+no-bump-message: "(git|docs|ci|chore|version|tag):"
 branches: {}
 ignore:
   sha: []
+  commits-before: 2022-01-20T23:30:00
 merge-message-formats: {}

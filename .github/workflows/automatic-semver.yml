@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ver: ${{ steps.gv.outputs.semVer }}
+      pre: ${{ steps.gv.outputs.commitsSinceVersionSource }}
       shortVer: ${{ steps.gv.outputs.majorMinorPatch }}
       longVer: ${{ steps.gv.outputs.fullSemVer }}
       branch: ${{ steps.gv.outputs.branchName }}
@@ -44,13 +45,17 @@ jobs:
           regex: true
           include: '**README.md'
           exclude: '!**.fx?'
-      - name: Commit and tag changes to current branch
+      - name: Commit and push changes to current branch
         run: |
           git config --global user.name "FroggEater"
           git config --global user.email "bastien.froment@outlook.fr"
           git commit --allow-empty -am "version: automatic update"
-          git tag v${{ needs.run-gitversion.outputs.ver }}
           git push
+      - name: Tag changes on current branch
+        run: |
+          git config --global user.name "FroggEater"
+          git config --global user.email "bastien.froment@outlook.fr"
+          git tag -a v${{ needs.run-gitversion.outputs.ver }}-rc${{ needs.run-gitversion.outputs.pre }} -m "tag: automatic update"
           git push --tags
 
 
