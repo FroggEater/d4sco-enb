@@ -42,14 +42,14 @@ jobs:
       - name: Find and replace version in README
         uses: jacobtomlinson/gha-find-replace@v2
         with:
-          find: '([0-9]+[.][0-9]+[.][0-9]+(-(alpha|beta){1})?){1}'
+          find: '([0-9]+[.][0-9]+[.][0-9]+){1}'
           replace: ${{ needs.run-gitversion.outputs.ver }}
           regex: true
           include: '**README.md'
       - name: Find and replace version in code
         uses: jacobtomlinson/gha-find-replace@v2
         with:
-          find: '([0-9]+[.][0-9]+[.][0-9]+(-(alpha|beta){1})?){1}'
+          find: '([0-9]+[.][0-9]+[.][0-9]+){1}'
           replace: ${{ needs.run-gitversion.outputs.ver }}
           regex: true
           include: '**.fx?'
@@ -59,13 +59,6 @@ jobs:
           git config --global user.email "bastien.froment@outlook.fr"
           git commit --allow-empty -am "ci: automatic version update"
           git push
-      - name: Generate changelog file
-        uses: BobAnkh/auto-generate-changelog@master
-        with:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SUPPRESS_UNSCOPED: true
-          COMMIT_MESSAGE: 'ci: automatic changelog update'
-          TYPE: 'feat:Features,fix:Bugfixes,perf:Others'
       - name: Tag changes on current branch
         run: |
           git config --global user.name "FroggEater"
