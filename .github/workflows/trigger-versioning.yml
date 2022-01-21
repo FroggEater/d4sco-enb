@@ -28,11 +28,13 @@ jobs:
           useConfigFile: true
           configFilePath: GitVersion.yml
   run-bump-file-version:
-    name: Update version in files, commit and tag
+    name: Update and generate files, commit and tag
     needs: run-gitversion
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Find and replace version in files
         uses: jacobtomlinson/gha-find-replace@v2
         with:
@@ -45,13 +47,20 @@ jobs:
         run: |
           git config --global user.name "FroggEater"
           git config --global user.email "bastien.froment@outlook.fr"
-          git commit --allow-empty -am "version: automatic update"
+          git commit --allow-empty -am "ci: automatic update"
           git push
       - name: Tag changes on current branch
         run: |
           git config --global user.name "FroggEater"
           git config --global user.email "bastien.froment@outlook.fr"
-          git tag -a v${{ needs.run-gitversion.outputs.ver }}-rc${{ needs.run-gitversion.outputs.pre }} -m "tag: automatic update"
+          git tag -a v${{ needs.run-gitversion.outputs.ver }}-rc${{ needs.run-gitversion.outputs.pre }} -m "ci: automatic update"
           git push --tags
+      - name: Generate changelog file
+        uses: BobAnkh/auto-generate-changelog@master
+        with:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPPRESS_UNSCOPED: true
+          COMMIT_MESSAGE: 'ci: automatic changelog update'
+          TYPE: 'feat:Features,fix:Bugfixes,perf:Others'
 
 
