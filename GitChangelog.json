@@ -23,6 +23,7 @@
       "pattern": "v([0-9]+[.][0-9]+[.][0-9]+){1}-rc[0-9]+"
     }
   },
+  "pr_template": "- (#${{NUMBER}}) ${{TITLE}}\n  - PR: ${{URL}}\n  ${{BODY}}",
   "max_pull_requests": 1000,
   "max_back_track_time_days": 1000
 }
