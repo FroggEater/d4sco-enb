@@ -20,7 +20,8 @@
   "label_extractor": [
     {
       "pattern": "(feat|fix|perf|refactor|chore):",
-      "target": "$1"
+      "target": "$1",
+      "on_property": "commit message"
     }
   ],
   "tag_resolver": {

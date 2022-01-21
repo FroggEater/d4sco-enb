@@ -6,7 +6,7 @@ on:
       - '*'
 jobs:
   run-changelog-builder:
-    name: Run Changelog Builder
+    name: Run Full Changelog Builder
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -21,6 +21,7 @@ jobs:
           configuration: 'GitChangelog.json'
           outputFile: 'CHANGELOG.md'
           commitMode: 'true'
+          fromTag: 'v0.1.0-rc29'
       - name: Commit and push changes to current branch
         run: |
           git config --global user.name "FroggEater"
