@@ -1,19 +1,19 @@
 {
   "categories": [
     {
-      "title": "## 🚀 Features",
+      "title": "## 🚀 FEATURES",
       "labels": ["feat"]
     },
     {
-      "title": "## 🧪 Performance",
+      "title": "## 🧪 PERFORMANCE",
       "labels": ["perf"]
     },
     {
-      "title": "## 🐛 Fixes",
+      "title": "## 🐛 FIXES",
       "labels": ["fix"]
     },
     {
-      "title": "## 🛠️ Development",
+      "title": "## 🛠️ TECH",
       "labels": ["refactor", "chore"]
     }
   ],
@@ -23,7 +23,8 @@
       "pattern": "v([0-9]+[.][0-9]+[.][0-9]+){1}-rc[0-9]+"
     }
   },
-  "pr_template": "**PR[#${{NUMBER}}](${{URL}})** | ${{TITLE}}\n${{BODY}}\n",
+  "pr_template": "### **[PR#${{NUMBER}}](${{URL}}) | ${{TITLE}}**\n${{BODY}}\n",
+  "template": "# **📎 CHANGELOG** | ${{FROM_TAG}} > ${{TO_TAG}}\n${{CHANGELOG}}\n",
   "max_pull_requests": 1000,
   "max_back_track_time_days": 1000
 }
