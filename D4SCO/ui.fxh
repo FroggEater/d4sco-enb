@@ -7,16 +7,13 @@
 #ifndef D4SCO_UI
 #define D4SCO_UI
 
-/* -------------------------------- Includes -------------------------------- */
-
-#include "req/version.fxh"
-
 /* ------------------------------- Parameters ------------------------------- */
 
-#define CH_BLNK " "
+#define CH_HEAD ":"
 #define CH_SPLT "-"
-#define CH_SEPR "="
-#define CH_LGTH 100
+#define CH_LGTH 24
+#define CH_TABL 8
+#define CH_JOIN " - "
 
 #define PRE_CTGR "| "
 #define PRE_MESG "  "
@@ -26,9 +23,9 @@
 #define SUF_CTGR " :"
 #define SUF_BOOL " ?"
 
-#define ENB_NAME "D4SCO ENB"
-#define ENB_AUTH "FroggEater"
-#define ENB_VERS VERSION
+#define ENB_NAME "D4SCO"
+#define ENB_AUTH "by FroggEater"
+#define ENB_VERS "0.0.0"
 
 #define DEF_ISTP 1
 #define DEF_FSTP 0.05
@@ -38,21 +35,22 @@
 #define UI_EMPTY(V, N) \
   int V <string UIName = N; int UIMin = 0; int UIMax = 0;> = {0};
 
-#define UI_BLNK(X) UI_EMPTY(iBLNK##X, REPL(X)(CH_BLNK))
-#define UI_SPLT(X) UI_EMPTY(iSPLT##X, REPL(CH_LGTH)(CH_SPLT)##REPL(X)(CH_BLNK))
-#define UI_SEPR(X) UI_EMPTY(iSEPR##X, REPL(CH_LGTH)(CH_SEPR)##REPL(X)(CH_BLNK))
+#define UI_BLNK(X) UI_EMPTY(iBLNK##X, SPC(X))
+#define UI_SPLT(X) UI_EMPTY(iSPLT##X, CHR(X, CH_SPLT))
+#define UI_SECT(X, N) UI_EMPTY(iSECT##X, TAB(N, CH_SPLT))
 
 #define UI_CTGR(X, N) UI_EMPTY(iCTGR##X, PRE_CTGR##N##SUF_CTGR)
 #define UI_MESG(X, N) UI_EMPTY(iMESG##X, PRE_MESG##N)
 
 #define UI_HEAD(N) \
-  UI_SEPR(127) \
-  UI_BLNK(126) \
-  UI_MESG(127, ENB_NAME##" - "##ENB_VERS) \
-  UI_MESG(128, "by "##ENB_AUTH) \
-  UI_BLNK(127) \
-  UI_SEPR(128) \
-  UI_BLNK(128)
+  UI_BLNK(60) \
+  UI_EMPTY(iHSPC_1, MRG(REPL_, 62)(CH_HEAD)) \
+  UI_BLNK(61) \
+  UI_MESG(_1, MRG(ENB_NAME, MRG(CH_JOIN, ENB_VERS))) \
+  UI_MESG(_2, ENB_AUTH) \
+  UI_BLNK(62) \
+  UI_EMPTY(iHSPC_2, MRG(REPL_, 63)(CH_HEAD)) \
+  UI_BLNK(63)
 
 /* ----------------------- Simple Parameters Elements ----------------------- */
 
@@ -67,6 +65,13 @@
 #define UI_FLOAT(V, N, Mi, Ma, D) UI_FLOAT_STP(V, N, Mi, Ma, D, DEF_FSTP)
 
 /* -------------------------------- Utilities ------------------------------- */
+
+#define MRG(A, B) A##B
+#define STR(A) #A
+
+#define SPC(X) REPL(X)(" ")
+#define CHR(X, C) MRG(MRG(REPL_, CH_LGTH)(C), SPC(X))
+#define TAB(N, C) MRG(MRG(REPL_, CH_TABL)(C), " "N)
 
 #define REPL(X) REPL_##X
 #define REPL_1(X) X
