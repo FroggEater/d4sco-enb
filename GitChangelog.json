@@ -1,4 +1,5 @@
 {
+  "sort": "DESC",
   "categories": [
     {
       "title": "## 🚀 FEATURES",
@@ -23,8 +24,8 @@
       "pattern": "v([0-9]+[.][0-9]+[.][0-9]+){1}-rc[0-9]+"
     }
   },
-  "pr_template": "### **[PR#${{NUMBER}}](${{URL}}) | ${{TITLE}}**\n${{BODY}}\n",
-  "template": "# **📎 CHANGELOG** | ${{FROM_TAG}} > ${{TO_TAG}}\n${{CHANGELOG}}\n",
+  "pr_template": "#### **[PR#${{NUMBER}}](${{URL}}) | ${{TITLE}}**\n${{BODY}}\n",
+  "template": "# 📎 CHANGELOG\n```\n${{FROM_TAG}} > ${{TO_TAG}}\n```\n\n${{CHANGELOG}}\n",
   "max_pull_requests": 1000,
   "max_back_track_time_days": 1000
 }
