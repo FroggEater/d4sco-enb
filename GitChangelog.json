@@ -26,7 +26,7 @@
   "transformers": [
     {
       "pattern": ": (.+)",
-      "target": "$1"
+      "target": "- $1"
     }
   ],
   "tag_resolver": {
