@@ -17,18 +17,6 @@
       "labels": ["refactor", "chore"]
     }
   ],
-  "label_extractor": [
-    {
-      "pattern": "(.+):",
-      "target": "$1"
-    }
-  ],
-  "transformers": [
-    {
-      "pattern": ": (.+)",
-      "target": "- $1"
-    }
-  ],
   "tag_resolver": {
     "method": "semver",
     "filter": {

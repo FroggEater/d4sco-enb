@@ -20,7 +20,6 @@ jobs:
         with:
           configuration: 'GitChangelog.json'
           outputFile: 'CHANGELOG.md'
-          commitMode: 'true'
           fromTag: 'v0.1.0-rc29'
       - name: Commit and push changes to current branch
         run: |
