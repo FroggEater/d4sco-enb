@@ -41,8 +41,7 @@ jobs:
           find: '([0-9]+[.][0-9]+[.][0-9]+(-(alpha|beta){1})?){1}'
           replace: ${{ needs.run-gitversion.outputs.ver }}
           regex: true
-          include: '**README.md'
-          exclude: '!**.fx?'
+          include: '**README.md, **.fx?, */**.fx?'
       - name: Commit and push changes to current branch
         run: |
           git config --global user.name "FroggEater"
