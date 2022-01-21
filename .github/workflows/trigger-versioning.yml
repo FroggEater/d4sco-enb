@@ -54,7 +54,6 @@ jobs:
         with:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPPRESS_UNSCOPED: true
-          COMMITTER: 'FroggEater'
           COMMIT_MESSAGE: 'ci: automatic changelog update'
           TYPE: 'feat:Features,fix:Bugfixes,perf:Others'
       - name: Tag changes on current branch
