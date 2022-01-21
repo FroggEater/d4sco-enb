@@ -49,12 +49,6 @@ jobs:
           git config --global user.email "bastien.froment@outlook.fr"
           git commit --allow-empty -am "ci: automatic update"
           git push
-      - name: Tag changes on current branch
-        run: |
-          git config --global user.name "FroggEater"
-          git config --global user.email "bastien.froment@outlook.fr"
-          git tag -a v${{ needs.run-gitversion.outputs.ver }}-rc${{ needs.run-gitversion.outputs.pre }} -m "ci: automatic update"
-          git push --tags
       - name: Generate changelog file
         uses: BobAnkh/auto-generate-changelog@master
         with:
@@ -63,5 +57,9 @@ jobs:
           COMMITER: 'FroggEater'
           COMMIT_MESSAGE: 'ci: automatic changelog update'
           TYPE: 'feat:Features,fix:Bugfixes,perf:Others'
-
-
+      - name: Tag changes on current branch
+        run: |
+          git config --global user.name "FroggEater"
+          git config --global user.email "bastien.froment@outlook.fr"
+          git tag -a v${{ needs.run-gitversion.outputs.ver }}-rc${{ needs.run-gitversion.outputs.pre }} -m "ci: automatic update"
+          git push --tags
