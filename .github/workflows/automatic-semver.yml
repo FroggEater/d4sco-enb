@@ -64,5 +64,6 @@ jobs:
         with:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPPRESS_UNSCOPED: true
+          COMMITER: 'FroggEater'
           COMMIT_MESSAGE: 'ci: automatic changelog update'
           TYPE: 'feat:Features,fix:Bugfixes,perf:Others'
