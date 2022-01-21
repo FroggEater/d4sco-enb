@@ -14,14 +14,14 @@ SamplerState PointSampler
   Filter = MIN_MAG_MIP_POINT;
   AddressU = Clamp;
   AddressV = Clamp;
-}
+};
 
 SamplerState LinearSampler
 {
   Filter = MIN_MAG_MIP_LINEAR;
   AddressU = Clamp;
   AddressV = Clamp;
-}
+};
 
 /* -------------------------------- Utilities ------------------------------- */
 
@@ -31,7 +31,7 @@ float min3(float3 v) { return min(min2(v.xy), v.z); }
 float min4(float4 v) { return min(min3(v.xyz), v.w); }
 
 // Returns true if all the elements of the given vector are out of the given bounds
-bool ext(float v, float mi, float ma) { return v < mi && v > ma; }
+bool ext(float v, float mi, float ma) { return (v < mi || v > ma); }
 bool ext2(float2 v, float mi, float ma) { return ext(v.x, mi, ma) && ext(v.y, mi, ma); }
 bool ext3(float3 v, float mi, float ma) { return ext2(v.xy, mi, ma) && ext(v.z, mi, ma); }
 bool ext4(float4 v, float mi, float ma) { return ext3(v.xyz, mi, ma) && ext(v.w, mi, ma); }
