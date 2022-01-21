@@ -30,6 +30,9 @@
 #define ENB_AUTH "FroggEater"
 #define ENB_VERS VERSION
 
+#define DEF_ISTP 1
+#define DEF_FSTP 0.05
+
 /* ----------------------------- Style Elements ----------------------------- */
 
 #define UI_EMPTY(V, N) \
@@ -45,11 +48,23 @@
 #define UI_HEAD(N) \
   UI_SEPR(127) \
   UI_BLNK(126) \
-  UI_MESG(127, #ENB_NAME" - "#ENB_VERS) \
-  UI_MESG(128, "by "#ENB_AUTH) \
+  UI_MESG(127, ENB_NAME##" - "##ENB_VERS) \
+  UI_MESG(128, "by "##ENB_AUTH) \
   UI_BLNK(127) \
   UI_SEPR(128) \
   UI_BLNK(128)
+
+/* ----------------------- Simple Parameters Elements ----------------------- */
+
+#define UI_BOOL(V, N, D) \
+  bool V <string UIName = PRE_BOOL##N##SUF_BOOL;> = {D};
+#define UI_SPNR(T, V, N, Mi, Ma, D, S) \
+  T V <string UIName = N; string UIWidget = "Spinner"; T UIMin = Mi; T UIMax = Ma; T UIStep = S;> = {D};
+
+#define UI_INT_STP(V, N, Mi, Ma, D, S) UI_SPNR(int, V, PRE_NUMB##N, Mi, Ma, D, S)
+#define UI_INT(V, N, Mi, Ma, D) UI_INT_STP(V, N, Mi, Ma, D, DEF_ISTP)
+#define UI_FLOAT_STP(V, N, Mi, Ma, D, S) UI_SPNR(float, V, PRE_NUMB##N, Mi, Ma, D, S)
+#define UI_FLOAT(V, N, Mi, Ma, D) UI_FLOAT_STP(V, N, Mi, Ma, D, DEF_FSTP)
 
 /* -------------------------------- Utilities ------------------------------- */
 
