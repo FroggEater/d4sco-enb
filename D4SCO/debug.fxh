@@ -9,15 +9,15 @@
 
 /* -------------------------------- Includes -------------------------------- */
 
-#include "ui.fxh"
-#include "macros.fxh"
-#include "helpers.fxh"
+#include "D4SCO/ui.fxh"
+#include "D4SCO/macros.fxh"
+#include "D4SCO/helpers.fxh"
 
 /* ------------------------------- UI Settings ------------------------------ */
 
 UI_BLNK(50)
 
-UI_CAT(_D1, "Debug Settings")
+UI_CTGR(_D1, "Debug Settings")
 UI_SPLT(39)
 UI_BOOL(bEnableTextures, "Enable Textures", false)
 UI_FLOAT(fTextureScale, "Texture Scale", 0.25, 5.0, 1.0)
@@ -28,11 +28,31 @@ UI_BLNK(51)
 UI_BOOL(bEnableSplitScreen, "Enable SplitScreen", false)
 UI_FLOAT(fSplitScreenPercent, "ScplitScreen Percent", 0.0, 1.0, 0.5)
 
-UI_BLNK(51)
+UI_BLNK(52)
 
 UI_BOOL(bEnableClipping, "Enable Clipping", false)
 UI_FLOAT(fClippingUpperTreshold, "Clipping Upper Treshold", 0.0, 1.0, 1.0)
 UI_FLOAT(fClippingLowerTreshold, "Clipping Lower Treshold", 0.0, 1.0, 0.0)
+
+/* -------------------------------- Functions ------------------------------- */
+
+float4 debug(float4 res)
+{
+  if (!bEnableClipping) return res;
+
+  float3 color = res.rgb;
+  bool isOutside = ext3(color, fClippingLowerTreshold + 0.01, fClippingUpperTreshold - 0.01);
+  float clipping = step(min3(color), 0.5);
+
+  color = isOutside ?
+    float3(clipping, clipping, clipping) :
+    color;
+
+  return float4(
+    color,
+    1.0
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                   SHADERS                                  */
@@ -89,26 +109,6 @@ float4 PS_SplitScreen(
   return float4(color, 1.0);
 }
 
-float4 PS_Clipping(
-  float4 pos : SV_POSITION,
-  float2 txcoord : TEXCOORD0,
-  uniform Texture2D TextureInput
-) : SV_TARGET
-{
-  float3 color = TextureInput.Sample(PointSampler, txcoord.xy).rgb;
-  bool isOutside = ext3(color, fClippingLowerTreshold, fClippingUpperTreshold);
-
-  clip(isOutside ? 1.0 : -1.0);
-
-  float clipping = step(min3(color), 0.5);
-  return float4(
-    clipping,
-    clipping,
-    clipping,
-    1.0
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /*                                 TECHNIQUES                                 */
 /* -------------------------------------------------------------------------- */
@@ -117,7 +117,5 @@ float4 PS_Clipping(
   PASS(NAME, VS_Debug(0, ORDER), PS_Texture(TEXTURE, SINGLE))
 #define PASS_DEBUG_SPLITSCREEN(NAME, TEXTURE) \
   PASS(NAME, VS_Basic(), PS_SplitScreen(TEXTURE))
-#define PASS_DEBUG_CLIPPING(NAME, TEXTURE) \
-  PASS(NAME, VS_Basic(), PS_Clipping(TEXTURE))
 
 #endif
