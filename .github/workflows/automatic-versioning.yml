@@ -73,6 +73,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - name: Fetch tags and branches history
+        run: git fetch --prune
       - name: Build changelog
         id: cl
         uses: mikepenz/release-changelog-builder-action@v2.7.2
