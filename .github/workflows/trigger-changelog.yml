@@ -1,9 +1,6 @@
-name: Changelog Builder
+name: Manual Changelog Builder
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '*'
 jobs:
   run-changelog-builder:
     name: Run Full Changelog Builder

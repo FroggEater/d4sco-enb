@@ -67,6 +67,7 @@ jobs:
           git push --force --tags
   run-changelog-builder:
     name: Run Full Changelog Builder
+    needs: run-bump-file-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
