@@ -89,4 +89,5 @@ jobs:
           git config --global user.name "FroggEater"
           git config --global user.email "bastien.froment@outlook.fr"
           git commit --allow-empty -am "ci: automatic changelog update"
+          git pull --rebase
           git push

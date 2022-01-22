@@ -69,8 +69,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Fetch tags and branches history
-        run: git fetch --prune
       - name: Build changelog
         id: cl
         uses: mikepenz/release-changelog-builder-action@v2.7.2
@@ -85,4 +83,5 @@ jobs:
           git config --global user.name "FroggEater"
           git config --global user.email "bastien.froment@outlook.fr"
           git commit --allow-empty -am "ci: automatic changelog update"
+          git pull --rebase
           git push
