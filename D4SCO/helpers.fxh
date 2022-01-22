@@ -7,6 +7,10 @@
 #ifndef D4SCO_HELPERS
 #define D4SCO_HELPERS
 
+/* -------------------------------- Constants ------------------------------- */
+
+static const float HALF_MAX = 65535.0;
+
 /* -------------------------------- Samplers -------------------------------- */
 
 SamplerState PointSampler

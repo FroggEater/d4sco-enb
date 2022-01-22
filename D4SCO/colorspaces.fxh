@@ -7,6 +7,10 @@
 #ifndef D4SCO_COLORSPACES
 #define D4SCO_COLORSPACES
 
+/* -------------------------------- Constants ------------------------------- */
+
+static const float3 LUM_AP1 = float3(0.272228716780915, 0.674081765811148, 0.053689517407937);
+
 /* ---------------------------- Common Transforms --------------------------- */
 
 // ANCHOR | sRGB <> sRGB' | Rec. 709 | D65

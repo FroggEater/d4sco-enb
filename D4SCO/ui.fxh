@@ -28,7 +28,7 @@
 #define ENB_VERS "0.4.1"
 
 #define DEF_ISTP 1
-#define DEF_FSTP 0.05
+#define DEF_FSTP 0.01
 
 /* ----------------------------- Style Elements ----------------------------- */
 
