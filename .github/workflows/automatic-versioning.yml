@@ -63,5 +63,31 @@ jobs:
         run: |
           git config --global user.name "FroggEater"
           git config --global user.email "bastien.froment@outlook.fr"
-          git tag -a v${{ needs.run-gitversion.outputs.ver }}-rc${{ needs.run-gitversion.outputs.pre }} -m "ci: automatic tag update"
-          git push --tags
+          git tag -f -a v${{ needs.run-gitversion.outputs.ver }} -m "ci: automatic tag update"
+          git push --force --tags
+  run-changelog-builder:
+    name: Run Full Changelog Builder
+    needs: run-bump-file-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Fetch tags and branches history
+        run: git fetch --prune
+      - name: Build changelog
+        id: cl
+        uses: mikepenz/release-changelog-builder-action@v2.7.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          configuration: 'GitChangelog.json'
+          outputFile: 'CHANGELOG.md'
+          fromTag: 'v0.1.0-rc29'
+      - name: Commit and push changes to current branch
+        run: |
+          git config --global user.name "FroggEater"
+          git config --global user.email "bastien.froment@outlook.fr"
+          git commit --allow-empty -am "ci: automatic changelog update"
+          git pull --rebase
+          git push
