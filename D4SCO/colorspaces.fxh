@@ -7,6 +7,10 @@
 #ifndef D4SCO_COLORSPACES
 #define D4SCO_COLORSPACES
 
+/* -------------------------------- Includes -------------------------------- */
+
+#include "D4SCO/helpers.fxh"
+
 /* -------------------------------- Constants ------------------------------- */
 
 static const float3 LUM_AP1 = float3(0.272228716780915, 0.674081765811148, 0.053689517407937);
@@ -53,6 +57,28 @@ float3 XYZtosRGBl(float3 color)
     0.055630079696994, -0.203976958888977, 1.056971514242879
   );
   return mul(mat, color);
+}
+
+/* ----------------------------- CIE Transforms ----------------------------- */
+
+// ANCHOR | XYZ <> xyY
+float3 XYZtoxyY(float3 color)
+{
+  float divider = sum3(color);
+  if (divider == 0.0) divider = D10;
+  return float3(
+    color.x / divider,
+    color.y / divider,
+    color.y
+  );
+}
+float3 xyYtoXYZ(float3 color)
+{
+  return float3(
+    color.x * color.z / max(color.y, D10),
+    color.z,
+    (1.0 - color.x - color.y) * color.z / max(color.y, D10)
+  );
 }
 
 /* ----------------------------- ACES Transforms ---------------------------- */
