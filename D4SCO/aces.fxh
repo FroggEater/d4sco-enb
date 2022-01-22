@@ -16,6 +16,7 @@
 
 /* -------------------------------- Constants ------------------------------- */
 
+static const float ODT_SURROUND_GAMMA = 0.9811;
 static const float ODT_CINEMA_WHITE = 48.0;
 static const float ODT_CINEMA_BLACK = 0.02;
 
@@ -67,13 +68,13 @@ float computeGlow(float yc, float glowGain, float glowMid)
   return glow;
 }
 
-float3 applyBrighterSurround(float3 color, float gamma = 0.9811)
+float3 applyBrighterSurround(float3 color)
 {
   color = AP1toXYZ(color);
   color = XYZtoxyY(color);
 
   color.y = clamp(color.y, 0.0, HALF_MAX);
-  color.y = pow(color.y, gamma);
+  color.y = pow(color.y, ODT_SURROUND_GAMMA);
 
   color = xyYtoXYZ(color);
   color = XYZtoAP1(color);
@@ -85,15 +86,15 @@ float3 applyBrighterSurround(float3 color, float gamma = 0.9811)
 // ANCHOR | sRGB > ACES2065-1 | D65 > D60 (Bradford)
 float3 applyIDTtoAP0(float3 color, float preExposure = 1.0)
 {
-  linColor = sRGBtosRGBl(color);
-  return sRGBltoAP0(linColor * preExposure);
+  color = sRGBtosRGBl(color);
+  return sRGBltoAP0(color * preExposure);
 }
 
 // ANCHOR | sRGB > ACEScg | D65 > D60 (Bradford)
 float3 applyIDTtoAP1(float3 color, float preExposure = 1.0)
 {
-  linColor = sRGBtosRGBl(color);
-  return sRGBltoAP1(linColor * preExposure);
+  color = sRGBtosRGBl(color);
+  return sRGBltoAP1(color * preExposure);
 }
 
 /* ----------------------------------- RRT ---------------------------------- */
@@ -104,7 +105,6 @@ float3 applyIDTtoAP1(float3 color, float preExposure = 1.0)
 float3 applyRRT(
   float3 aces,
   uint colorspace = 0,
-  bool useSimpleCubic = false,
   float ycRadiusWeight = 1.75,
   float glowGain = 0.05,
   float glowMid = 0.08,
@@ -126,18 +126,17 @@ float3 applyRRT(
   // Red correction
   float hue = RGBtoHue(aces);
   float centeredHue = centerHue(hue, redHue);
-  float hueWeight = cubicBasisShaper(centeredHue, redWidth, useSimpleCubic);
+  float hueWeight = cubicBasisShaper(centeredHue, redWidth);
 
   aces.r += hueWeight * sat * (redPivot - aces.r) * (1.0 - redScale);
 
   // Go from ACES to RGB rendering space
+  aces = clamp(aces, 0.0, HALF_MAX);
   if (colorspace == 0)
   {
-    aces = clamp(aces, 0.0, HALF_MAX);
     aces = AP0toAP1(aces);
+    aces = clamp(aces, 0.0, HALF_MAX);
   }
-
-  aces = clamp(aces, 0.0, HALF_MAX);
 
   // Global desaturation
   aces = lerp(dot(aces, LUM_AP1), aces, satFactor);
@@ -163,7 +162,6 @@ float3 applyRRT(
 float3 applyPartialODT(
   float3 oces,
   uint colorspace = 0,
-  float gamma = 0.9811,
   float satFactor = 0.93
 )
 {
@@ -185,7 +183,7 @@ float3 applyPartialODT(
   );
 
   // Compensate for a dimmer surround
-  oces = applyBrighterSurround(oces, gamma);
+  oces = applyBrighterSurround(oces);
 
   // Global desaturation to compensate for luminance differences
   oces = lerp(dot(oces, LUM_AP1), oces, satFactor);
@@ -195,4 +193,4 @@ float3 applyPartialODT(
   return saturate(oces);
 }
 
-#endif D4SCO_ACES
+#endif

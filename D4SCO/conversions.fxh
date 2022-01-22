@@ -21,7 +21,7 @@ float RGBtoSaturation(float3 color)
 // Converts RGB to a luminance proxy YC ~ Y + K * chroma
 float RGBtoYc(float3 color, float radiusWeight = 1.75)
 {
-  float chroma = sqrt(color.b * sub2(color.bg) + color.g * sub2(color.gr) + color.b * sub2(color.rb));
+  float chroma = sqrt(color.b * sub2(color.bg) + color.g * sub2(color.gr) + color.r * sub2(color.rb));
   return (sum3(color) + radiusWeight * chroma) / 3.0;
 }
 float RGBtoHue(float3 color)

@@ -54,9 +54,9 @@ float max3(float3 v) { return max(max2(v.xy), v.z); }
 float max4(float4 v) { return max(max3(v.xyz), v.w); }
 
 // Returns the sum of all the elements of a given vector
-float sum2(float2 v) { return sum(v.x, v.y); }
-float sum3(float3 v) { return sum(sum2(v.xy), v.z); }
-float sum4(float4 v) { return sum(sum3(v.xyz), v.w); }
+float sum2(float2 v) { return v.x + v.y; }
+float sum3(float3 v) { return sum2(v.xy) + v.z; }
+float sum4(float4 v) { return sum3(v.xyz) + v.w; }
 
 // Returns the substraction of all the elements in order of the given vector
 float sub2(float2 v) { return v.x - v.y; }

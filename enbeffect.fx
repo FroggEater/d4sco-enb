@@ -124,16 +124,10 @@ UI_FLOAT(fGlowMid, "Glow: Middle Point", 0.0, 0.5, 0.08)
 
 UI_BLNK(3)
 
-UI_BOOL(bUseSimpleCBS, "Red: Enable Simplified CBS")
 UI_FLOAT(fRedHue, "Red: Hue Angle", 0.0, 360.0, 0.0)
 UI_FLOAT(fRedWidth, "Red: Base Width", 0.0, 360.0, 135.0)
 UI_FLOAT(fRedPivot, "Red: Pivot Point", 0.0, 0.5, 0.03)
 UI_FLOAT(fRedScale, "Red: Scale", 0.0, 2.0, 0.82)
-
-UI_BLNK(4)
-
-UI_MESG(2, "ODT Specific Settings")
-UI_FLOAT_STP(fGammaCorrection, "Surround: Gamma Correction", 0.0, 2.0, 0.9811, 0.0001)
 
 #include "D4SCO/debug.fxh"
 
@@ -145,89 +139,90 @@ UI_FLOAT_STP(fGammaCorrection, "Surround: Gamma Correction", 0.0, 2.0, 0.9811, 0
 
 float4	PS_Draw(float4 pos : SV_POSITION, float2 txcoord: TEXCOORD0) : SV_TARGET
 {
-	float3 color = TextureColor.Sample(PointSampler, txcoord.xy).rgb;
+  float3 color = TextureColor.Sample(PointSampler, txcoord.xy).rgb;
 
-	color = 
-		iAcesColorspace == 0 ?
-		applyIDTtoAP0(color, fIDTExposureMultiplier) :
-		applyIDTtoAP1(color, fIDTExposureMultiplier);
+  if (bUseAces)
+  {
+    color = iAcesColorspace == 0 ?
+      applyIDTtoAP0(color, fIDTExposureMultiplier) :
+      applyIDTtoAP1(color, fIDTExposureMultiplier);
 
-	color = applyRRT(
-		color,
-		iAcesColorspace,
-		bUseSimpleCBS,
-		fYcRadiusWeight,
-		fGlowGain,
-		fGlowMid,
-		fRedHue,
-		fRedWidth,
-		fRedPivot,
-		fRedScale,
-		fRRTSatFactor
-	);
+    color = applyRRT(	
+      color,
+      iAcesColorspace,
+      fYcRadiusWeight,
+      fGlowGain,
+      fGlowMid,
+      fRedHue,
+      fRedWidth,
+      fRedPivot,
+      fRedScale,
+      fRRTSatFactor
+    );
 
-	color = applyPartialODT(color, iAcesColorspace, fGammaCorrection, fODTSatFactor);
-	color = sRGBltosRGB(color);
-	return float4(saturate(color), 1.0);
+    color = applyPartialODT(color, iAcesColorspace, fODTSatFactor);
+    color = sRGBltosRGB(color);
+  }
+  return float4(saturate(color), 1.0);
 }
 
 // NOTE Vanilla shader, do not modify
 float4	PS_DrawOriginal(float4 pos : SV_POSITION, float2 txcoord : TEXCOORD0) : SV_TARGET
 {
-	float4	res;
-	float4	color;
+  float4	res;
+  float4	color;
 
-	float2	scaleduv=Params01[6].xy*IN.txcoord0.xy;
-	scaleduv=max(scaleduv, 0.0);
-	scaleduv=min(scaleduv, Params01[6].zy);
+  float2	scaleduv=Params01[6].xy*txcoord.xy;
+  scaleduv=max(scaleduv, 0.0);
+  scaleduv=min(scaleduv, Params01[6].zy);
 
-	color=TextureColor.Sample(Sampler0, IN.txcoord0.xy); //hdr scene color
+  color=TextureColor.Sample(PointSampler, txcoord.xy); //hdr scene color
 
-	float4	r0, r1, r2, r3;
-	r1.xy=scaleduv;
-	r0.xyz = color.xyz;
-	if (0.5<=Params01[0].x) r1.xy=IN.txcoord0.xy;
-	r1.xyz = TextureBloom.Sample(Sampler1, r1.xy).xyz;
-	r2.xy = TextureAdaptation.Sample(Sampler1, IN.txcoord0.xy).xy; //in skyrimse it two component
+  float4	r0, r1, r2, r3;
+  r1.xy=scaleduv;
+  r0.xyz = color.xyz;
+  if (0.5<=Params01[0].x) r1.xy=txcoord.xy;
+  r1.xyz = TextureBloom.Sample(LinearSampler, r1.xy).xyz;
+  r2.xy = TextureAdaptation.Sample(LinearSampler, txcoord.xy).xy; //in skyrimse it two component
 
-	r0.w=dot(float3(2.125000e-001, 7.154000e-001, 7.210000e-002), r0.xyz);
-	r0.w=max(r0.w, 1.000000e-005);
-	r1.w=r2.y/r2.x;
-	r2.y=r0.w * r1.w;
-	if (0.5<Params01[2].z) r2.z=0xffffffff; else r2.z=0;
-	r3.xy=r1.w * r0.w + float2(-4.000000e-003, 1.000000e+000);
-	r1.w=max(r3.x, 0.0);
-	r3.xz=r1.w * 6.2 + float2(5.000000e-001, 1.700000e+000);
-	r2.w=r1.w * r3.x;
-	r1.w=r1.w * r3.z + 6.000000e-002;
-	r1.w=r2.w / r1.w;
-	r1.w=pow(r1.w, 2.2);
-	r1.w=r1.w * Params01[2].y;
-	r2.w=r2.y * Params01[2].y + 1.0;
-	r2.y=r2.w * r2.y;
-	r2.y=r2.y / r3.y;
-	if (r2.z==0) r1.w=r2.y; else r1.w=r1.w;
-	r0.w=r1.w / r0.w;
-	r1.w=saturate(Params01[2].x - r1.w);
-	r1.xyz=r1 * r1.w;
-	r0.xyz=r0 * r0.w + r1;
-	r1.x=dot(r0.xyz, float3(2.125000e-001, 7.154000e-001, 7.210000e-002));
-	r0.w=1.0;
-	r0=r0 - r1.x;
-	r0=Params01[3].x * r0 + r1.x;
-	r1=Params01[4] * r1.x - r0;
-	r0=Params01[4].w * r1 + r0;
-	r0=Params01[3].w * r0 - r2.x;
-	r0=Params01[3].z * r0 + r2.x;
-	r0.xyz=saturate(r0);
-	r1.xyz=pow(r1.xyz, Params01[6].w);
-	//active only in certain modes, like khajiit vision, otherwise Params01[5].w=0
-	r1=Params01[5] - r0;
-	res=Params01[5].w * r1 + r0;
+  r0.w=dot(float3(2.125000e-001, 7.154000e-001, 7.210000e-002), r0.xyz);
+  r0.w=max(r0.w, 1.000000e-005);
+  r1.w=r2.y/r2.x;
+  r2.y=r0.w * r1.w;
+  if (0.5<Params01[2].z) r2.z=0xffffffff; else r2.z=0;
+  r3.xy=r1.w * r0.w + float2(-4.000000e-003, 1.000000e+000);
+  r1.w=max(r3.x, 0.0);
+  r3.xz=r1.w * 6.2 + float2(5.000000e-001, 1.700000e+000);
+  r2.w=r1.w * r3.x;
+  r1.w=r1.w * r3.z + 6.000000e-002;
+  r1.w=r2.w / r1.w;
+  r1.w=pow(r1.w, 2.2);
+  r1.w=r1.w * Params01[2].y;
+  r2.w=r2.y * Params01[2].y + 1.0;
+  r2.y=r2.w * r2.y;
+  r2.y=r2.y / r3.y;
+  if (r2.z==0) r1.w=r2.y; else r1.w=r1.w;
+  r0.w=r1.w / r0.w;
+  r1.w=saturate(Params01[2].x - r1.w);
+  r1.xyz=r1 * r1.w;
+  r0.xyz=r0 * r0.w + r1;
+  r1.x=dot(r0.xyz, float3(2.125000e-001, 7.154000e-001, 7.210000e-002));
+  r0.w=1.0;
+  r0=r0 - r1.x;
+  r0=Params01[3].x * r0 + r1.x;
+  r1=Params01[4] * r1.x - r0;
+  r0=Params01[4].w * r1 + r0;
+  r0=Params01[3].w * r0 - r2.x;
+  r0=Params01[3].z * r0 + r2.x;
+  r0.xyz=saturate(r0);
+  r1.xyz=pow(r1.xyz, Params01[6].w);
+  //active only in certain modes, like khajiit vision, otherwise Params01[5].w=0
+  r1=Params01[5] - r0;
+  res=Params01[5].w * r1 + r0;
 
 //	res.xyz = color.xyz;
 //	res.w=1.0;
-	return res;
+  return res;
 }
 
 /* -------------------------------------------------------------------------- */

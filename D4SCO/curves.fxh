@@ -29,7 +29,7 @@ float sigmoidShaper(float x)
   return y * 0.5;
 }
 
-float cubicBasisShaper(float x, float width, bool simplified = false)
+float cubicBasisShaper(float x, float width, bool simplified = true)
 {
   if (simplified)
     return sq(smoothstep(0.0, 1.0, 1.0 - abs(2.0 * x / width)));
@@ -110,8 +110,8 @@ float applySegmentedSplineC5(float x, SegmentedSplineC5Params p)
     int j = coord;
     float t = coord - j;
 
-    float coefs[3] = {p.coefsLow[j], p.coefsLow[j + 1], p.coefsLow[j + 2]};
-    float monomials[3] = {t * t, t, 1.0};
+    float3 coefs = {p.coefsLow[j], p.coefsLow[j + 1], p.coefsLow[j + 2]};
+    float3 monomials = {t * t, t, 1.0};
 
     logy = dot(monomials, mul(coefs, SPLINE_MAT));
   }
@@ -122,8 +122,8 @@ float applySegmentedSplineC5(float x, SegmentedSplineC5Params p)
     int j = coord;
     float t = coord - j;
 
-    float coefs[3] = {p.coefsHigh[j], p.coefsHigh[j + 1], p.coefsHigh[j + 2]};
-    float monomials[3] = {t * t, t, 1.0};
+    float3 coefs = {p.coefsHigh[j], p.coefsHigh[j + 1], p.coefsHigh[j + 2]};
+    float3 monomials = {t * t, t, 1.0};
 
     logy = dot(monomials, mul(coefs, SPLINE_MAT));
   }
@@ -150,8 +150,8 @@ float applySegmentedSplineC9(float x, SegmentedSplineC9Params p)
     int j = coord;
     float t = coord - j;
 
-    float coefs[3] = {p.coefsLow[j], p.coefsLow[j + 1], p.coefsLow[j + 2]};
-    float monomials[3] = {t * t, t, 1.0};
+    float3 coefs = {p.coefsLow[j], p.coefsLow[j + 1], p.coefsLow[j + 2]};
+    float3 monomials = {t * t, t, 1.0};
 
     logy = dot(monomials, mul(coefs, SPLINE_MAT));
   }
@@ -162,8 +162,8 @@ float applySegmentedSplineC9(float x, SegmentedSplineC9Params p)
     int j = coord;
     float t = coord - j;
 
-    float coefs[3] = {p.coefsHigh[j], p.coefsHigh[j + 1], p.coefsHigh[j + 2]};
-    float monomials[3] = {t * t, t, 1.0};
+    float3 coefs = {p.coefsHigh[j], p.coefsHigh[j + 1], p.coefsHigh[j + 2]};
+    float3 monomials = {t * t, t, 1.0};
 
     logy = dot(monomials, mul(coefs, SPLINE_MAT));
   }
