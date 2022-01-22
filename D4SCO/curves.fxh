@@ -11,6 +11,14 @@
 
 #include "D4SCO/helpers.fxh"
 
+/* -------------------------------- Constants ------------------------------- */
+
+static const float3x3 SPLINE_MAT = float3x3(
+  0.5, -1.0, 0.5,
+  -1.0, 1.0, 0.5,
+  0.5, 0.0, 0.0
+);
+
 /* --------------------------------- Shapers -------------------------------- */
 
 float sigmoidShaper(float x)
@@ -58,5 +66,111 @@ float cubicBasisShaper(float x, float width, bool simplified = false)
 }
 
 /* --------------------------------- Curves --------------------------------- */
+
+struct SegmentedSplineC5Params
+{
+  float coefsLow[6];
+  float coefsHigh[6];
+
+  float2 minPoint;
+  float2 midPoint;
+  float2 maxPoint;
+
+  float slopeLow;
+  float slopeHigh;
+};
+
+struct SegmentedSplineC9Params
+{
+  float coefsLow[10];
+  float coefsHigh[10];
+
+  float2 minPoint;
+  float2 midPoint;
+  float2 maxPoint;
+
+  float slopeLow;
+  float slopeHigh;
+};
+
+float applySegmentedSplineC5(float x, SegmentedSplineC5Params p)
+{
+  static const int KNOTS_LOW = 4;
+  static const int KNOTS_HIGH = 4;
+
+  float logx = log10(max(x, D10));
+  float logy;
+
+  if (logx <= log10(p.minPoint.x))
+    logy = logx * p.slopeLow + (log10(p.minPoint.y) - p.slopeLow * log10(p.minPoint.x));
+  else if ((logx > log10(p.minPoint.x)) && (logx < log10(p.midPoint.x)))
+  {
+    float coord =
+      (KNOTS_LOW - 1) * (logx - log10(p.minPoint.x)) / (log10(p.midPoint.x) - log10(p.minPoint.x));
+    int j = coord;
+    float t = coord - j;
+
+    float coefs[3] = {p.coefsLow[j], p.coefsLow[j + 1], p.coefsLow[j + 2]};
+    float monomials[3] = {t * t, t, 1.0};
+
+    logy = dot(monomials, mul(coefs, SPLINE_MAT));
+  }
+  else if ((logx >= log10(p.midPoint.x)) && (logx < log10(p.maxPoint.x)))
+  {
+    float coord =
+      (KNOTS_HIGH - 1) * (logx - log10(p.midPoint.x)) / (log10(p.maxPoint.x) - log10(p.midPoint.x));
+    int j = coord;
+    float t = coord - j;
+
+    float coefs[3] = {p.coefsHigh[j], p.coefsHigh[j + 1], p.coefsHigh[j + 2]};
+    float monomials[3] = {t * t, t, 1.0};
+
+    logy = dot(monomials, mul(coefs, SPLINE_MAT));
+  }
+  else
+    logy = logx * p.slopeHigh + (log10(p.maxPoint.y) - p.slopeHigh * log10(p.maxPoint.x));
+
+  return pow(10.0, logy);
+}
+
+float applySegmentedSplineC9(float x, SegmentedSplineC9Params p)
+{
+  static const int KNOTS_LOW = 8;
+  static const int KNOTS_HIGH = 8;
+
+  float logx = log10(max(x, D10));
+  float logy;
+
+  if (logx <= log10(p.minPoint.x))
+    logy = logx * p.slopeLow + (log10(p.minPoint.y) - p.slopeLow * log10(p.minPoint.x));
+  else if ((logx > log10(p.minPoint.x)) && (logx < log10(p.midPoint.x)))
+  {
+    float coord =
+      (KNOTS_LOW - 1) * (logx - log10(p.minPoint.x)) / (log10(p.midPoint.x) - log10(p.minPoint.x));
+    int j = coord;
+    float t = coord - j;
+
+    float coefs[3] = {p.coefsLow[j], p.coefsLow[j + 1], p.coefsLow[j + 2]};
+    float monomials[3] = {t * t, t, 1.0};
+
+    logy = dot(monomials, mul(coefs, SPLINE_MAT));
+  }
+  else if ((logx >= log10(p.midPoint.x)) && (logx < log10(p.maxPoint.x)))
+  {
+    float coord =
+      (KNOTS_HIGH - 1) * (logx - log10(p.midPoint.x)) / (log10(p.maxPoint.x) - log10(p.midPoint.x));
+    int j = coord;
+    float t = coord - j;
+
+    float coefs[3] = {p.coefsHigh[j], p.coefsHigh[j + 1], p.coefsHigh[j + 2]};
+    float monomials[3] = {t * t, t, 1.0};
+
+    logy = dot(monomials, mul(coefs, SPLINE_MAT));
+  }
+  else
+    logy = logx * p.slopeHigh + (log10(p.maxPoint.y) - p.slopeHigh * log10(p.maxPoint.x));
+
+  return pow(10.0, logy);
+}
 
 #endif

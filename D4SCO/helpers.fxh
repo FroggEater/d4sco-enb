@@ -12,6 +12,7 @@
 static const float PI = 3.1415926535897932384626433832795;
 
 static const float HALF_MAX = 65535.0;
+// static const float HALF_MIN = exp2(-14.0);
 
 static const float D10 = 1e-10;
 static const float D9 = 1e-9;

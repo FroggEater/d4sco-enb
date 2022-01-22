@@ -14,6 +14,43 @@
 #include "D4SCO/curves.fxh"
 #include "D4SCO/helpers.fxh"
 
+/* -------------------------------- Constants ------------------------------- */
+
+static const float ODT_CINEMA_WHITE = 48.0;
+static const float ODT_CINEMA_BLACK = 0.02;
+
+static const SegmentedSplineC5Params C5_PARAMS_RRT =
+{
+  // coefsLow[6] & coefsHigh[6]
+  {-4.0, -4.0, -3.1573765773, -0.4852499958, 1.8477324706, 1.8477324706},
+  {-0.7185482425, 2.0810307172, 3.6681241237, 4.0, 4.0, 4.0},
+
+  // minPoint, midPoint, maxPoint
+  {0.18 * exp2(-15.0), D4},
+  {0.18, 4.8}, 
+  {0.18 * exp2(18.0), 10000.0},
+
+  // slopeLow, slopeHigh
+  0.0,
+  0.0
+};
+
+static const SegmentedSplineC9Params C9_PARAMS_ODT48 =
+{
+  // coefsLow[10] & coefsHigh[10]
+  {-1.6989700043, -1.6989700043, -1.4779, -1.2291, -0.8648, -0.448, 0.00518, 0.4511080334, 0.9113744414, 0.9113744414},
+  {0.5154386965, 0.8470437783, 1.1358, 1.3802, 1.5197, 1.5985, 1.6467, 1.6746091357, 1.687873339, 1.687873339},
+
+  // minPoint, midPoint, maxPoint
+  {applySegmentedSplineC5(0.18 * exp2(-6.5), C5_PARAMS_RRT), 0.02},
+  {applySegmentedSplineC5(0.18, C5_PARAMS_RRT), 4.8},
+  {applySegmentedSplineC5(0.18 * exp2(6.5), C5_PARAMS_RRT), 48.0},
+
+  // slopeLow, slopeHigh
+  0.0,
+  0.04
+};
+
 /* -------------------------------- Functions ------------------------------- */
 
 float computeGlow(float yc, float glowGain, float glowMid)
@@ -62,17 +99,6 @@ float3 applyIDTtoAP1(float3 color, float preExposure = 1.0)
 /* ----------------------------------- RRT ---------------------------------- */
 
 // TODO Put into a shared UI parameters file
-// uint iACESColorSpace = 0;
-
-// bool buseSimpleCubic = false;
-// float fycRadiusWeight = 1.75;
-// float fglowGain = 0.05;
-// float fglowMid = 0.08;
-// float fredHue = 0.0;
-// float fredWidth = 135.0;
-// float fredPivot = 0.03;
-// float fredScale = 0.82;
-// float fsatFactor = 0.96;
 
 // ANCHOR | ACES (AP0 or AP1) > OCES
 float3 applyRRT(
@@ -118,9 +144,9 @@ float3 applyRRT(
 
   // Apply tonescale for each channel
   aces = float3(
-    applySegmentedSplineC5(aces.r),
-    applySegmentedSplineC5(aces.g),
-    applySegmentedSplineC5(aces.b)
+    applySegmentedSplineC5(aces.r, C5_PARAMS_RRT),
+    applySegmentedSplineC5(aces.g, C5_PARAMS_RRT),
+    applySegmentedSplineC5(aces.b, C5_PARAMS_RRT)
   );
 
   // Go from RGB to OCES and return
@@ -133,16 +159,10 @@ float3 applyRRT(
 
 /* ----------------------------------- ODT ---------------------------------- */
 
-// float cinemaWhite = 48.0;
-// float cinemaBlack = 0.02;
-// float satFactor = 0.93;
-
 // ANCHOR | OCES > sRGB' | D60 > D65
 float3 applyPartialODT(
   float3 oces,
   uint colorspace = 0,
-  float cinemaBlack = 0.02,
-  float cinemaWhite = 48.0,
   float gamma = 0.9811,
   float satFactor = 0.93
 )
@@ -152,16 +172,16 @@ float3 applyPartialODT(
   
   // Apply tonescale for each channel
   oces = float3(
-    applySegmentedSplineC9(oces.r),
-    applySegmentedSplineC9(oces.g),
-    applySegmentedSplineC9(oces.b)
+    applySegmentedSplineC9(oces.r, C9_PARAMS_ODT48),
+    applySegmentedSplineC9(oces.g, C9_PARAMS_ODT48),
+    applySegmentedSplineC9(oces.b, C9_PARAMS_ODT48)
   );
 
   // Scale luminance to a linear code value
   oces = float3(
-    YtoLinear(oces.r, cinemaBlack, cinemaWhite),
-    YtoLinear(oces.g, cinemaBlack, cinemaWhite),
-    YtoLinear(oces.b, cinemaBlack, cinemaWhite)
+    YtoLinear(oces.r, ODT_CINEMA_BLACK, ODT_CINEMA_WHITE),
+    YtoLinear(oces.g, ODT_CINEMA_BLACK, ODT_CINEMA_WHITE),
+    YtoLinear(oces.b, ODT_CINEMA_BLACK, ODT_CINEMA_WHITE)
   );
 
   // Compensate for a dimmer surround
