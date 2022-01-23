@@ -136,8 +136,8 @@ float3 applyAGCC(float3 color)
   float gameBrightness = lerp(1.0, Params01[3].w, fAGCCBrtWeight);
   float gameContrast = lerp(1.0, Params01[3].z, fAGCCConWeight);
 
-  float3 gameTintColor = applyIDTtoAP1(Params01[4].rgb);
-  float3 gameFadeColor = applyIDTtoAP1(Params01[5].rgb);
+  float3 gameTintColor = applyIDT(Params01[4].rgb, fAcesExpMult);
+  float3 gameFadeColor = applyIDT(Params01[5].rgb, fAcesExpMult);
   float gameTintWeight = lerp(0.0, Params01[4].a, fAGCCTintWeight);
   float gameFadeWeight = lerp(0.0, Params01[5].a, fAGCCFadeWeight);
 
@@ -146,7 +146,7 @@ float3 applyAGCC(float3 color)
   color = lerp(grey, color, gameSaturation);
   color *= gameBrightness;
 
-  color = lerp(applyIDTtoAP1(MID_SRGB), color, gameContrast);
+  color = lerp(applyIDT(MID_SRGB, fAcesExpMult), color, gameContrast);
 
   color = lerp(color, gameTintColor * grey, gameTintWeight);
   color = lerp(color, gameFadeColor, gameFadeWeight);
