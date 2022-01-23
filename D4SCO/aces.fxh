@@ -16,9 +16,21 @@
 
 /* -------------------------------- Constants ------------------------------- */
 
-static const float ODT_SURROUND_GAMMA = 0.9811;
-static const float ODT_CINEMA_WHITE = 48.0;
+static const uint ACES_COLORSPACE = 1;
+
+static const float RRT_GLOW_GAIN = 0.05;
+static const float RRT_GLOW_MID = 0.08;
+static const float RRT_RED_HUE = 0.0;
+static const float RRT_RED_WIDTH = 135.0;
+static const float RRT_RED_PIVOT = 0.03;
+static const float RRT_RED_SCALE = 0.82;
+static const float RRT_SAT_FACTOR = 0.96;
+
 static const float ODT_CINEMA_BLACK = 0.02;
+static const float ODT_CINEMA_WHITE = 48.0;
+static const float ODT_SURROUND_GAMMA = 0.9811;
+static const float ODT_SAT_FACTOR = 0.93;
+
 
 static const SegmentedSplineC5Params C5_PARAMS_RRT =
 {
@@ -83,63 +95,50 @@ float3 applyBrighterSurround(float3 color)
 
 /* ----------------------------------- IDT ---------------------------------- */
 
-// ANCHOR | sRGB > ACES2065-1 | D65 > D60 (Bradford)
-float3 applyIDTtoAP0(float3 color, float preExposure = 1.0, bool linearize = true)
+// ANCHOR | sRGB > ACES2065-1 or ACEScg | D65 > D60 (Bradford)
+float3 applyIDT(float3 color, float exp = 1.0)
 {
-  if (linearize) color = sRGBtosRGBl(color);
-  return sRGBltoAP0(color * preExposure);
-}
+  color = sRGBtosRGBl(color);
+  color *= exp;
 
-// ANCHOR | sRGB > ACEScg | D65 > D60 (Bradford)
-float3 applyIDTtoAP1(float3 color, float preExposure = 1.0, bool linearize = true)
-{
-  if (linearize) color = sRGBtosRGBl(color);
-  return sRGBltoAP1(color * preExposure);
+  return ACES_COLORSPACE == 0 ?
+    sRGBltoAP0(color) :
+    sRGBltoAP1(color);
 }
 
 /* ----------------------------------- RRT ---------------------------------- */
 
-// TODO Put into a shared UI parameters file
-
 // ANCHOR | ACES (AP0 or AP1) > OCES
-float3 applyRRT(
-  float3 aces,
-  uint colorspace = 0,
-  float ycRadiusWeight = 1.75,
-  float glowGain = 0.05,
-  float glowMid = 0.08,
-  float redHue = 0.0,
-  float redWidth = 135.0,
-  float redPivot = 0.03,
-  float redScale = 0.82,
-  float satFactor = 0.96
-)
+float3 applyRRT(float3 aces, bool sweeteners = true)
 {
-  // Glow correction
-  float sat = RGBtoSaturation(aces);
-  float yc = RGBtoYc(aces, ycRadiusWeight);
-  float s = sigmoidShaper((sat - 0.4) / 0.2);
-  float glow = 1.0 + computeGlow(yc, glowGain * s, glowMid);
+  if (sweeteners)
+  {
+    // Glow correction
+    float sat = RGBtoSaturation(aces);
+    float yc = RGBtoYc(aces);
+    float s = sigmoidShaper((sat - 0.4) / 0.2);
+    float glow = 1.0 + computeGlow(yc, RRT_GLOW_GAIN * s, RRT_GLOW_MID);
 
-  aces *= glow;
+    aces *= glow;
 
-  // Red correction
-  float hue = RGBtoHue(aces);
-  float centeredHue = centerHue(hue, redHue);
-  float hueWeight = cubicBasisShaper(centeredHue, redWidth);
+    // Red correction
+    float hue = RGBtoHue(aces);
+    float centeredHue = centerHue(hue, RRT_RED_HUE);
+    float hueWeight = cubicBasisShaper(centeredHue, RRT_RED_WIDTH);
 
-  aces.r += hueWeight * sat * (redPivot - aces.r) * (1.0 - redScale);
+    aces.r += hueWeight * sat * (RRT_RED_PIVOT - aces.r) * (1.0 - RRT_RED_SCALE);
+  }
 
   // Go from ACES to RGB rendering space
   aces = clamp(aces, 0.0, HALF_MAX);
-  if (colorspace == 0)
+  if (ACES_COLORSPACE == 0)
   {
     aces = AP0toAP1(aces);
     aces = clamp(aces, 0.0, HALF_MAX);
   }
 
   // Global desaturation
-  aces = lerp(dot(aces, LUM_AP1), aces, satFactor);
+  aces = lerp(dot(aces, LUM_AP1), aces, RRT_SAT_FACTOR);
 
   // Apply tonescale for each channel
   aces = float3(
@@ -150,7 +149,7 @@ float3 applyRRT(
 
   // Go from RGB to OCES and return
   float3 oces = aces;
-  if (colorspace == 0)
+  if (ACES_COLORSPACE == 0)
     oces = AP1toAP0(aces);
 
   return oces;
@@ -159,13 +158,9 @@ float3 applyRRT(
 /* ----------------------------------- ODT ---------------------------------- */
 
 // ANCHOR | OCES > sRGB' | D60 > D65
-float3 applyPartialODT(
-  float3 oces,
-  uint colorspace = 0,
-  float satFactor = 0.93
-)
+float3 applyPartialODT(float3 oces)
 {
-  if (colorspace == 0)
+  if (ACES_COLORSPACE == 0)
     oces = AP0toAP1(oces);
   
   // Apply tonescale for each channel
@@ -186,7 +181,7 @@ float3 applyPartialODT(
   oces = applyBrighterSurround(oces);
 
   // Global desaturation to compensate for luminance differences
-  oces = lerp(dot(oces, LUM_AP1), oces, satFactor);
+  oces = lerp(dot(oces, LUM_AP1), oces, ODT_SAT_FACTOR);
 
   // Go back to sRGB' and return
   oces = AP1tosRGBl(oces);
