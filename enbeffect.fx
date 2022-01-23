@@ -100,8 +100,10 @@ Texture2D			RenderTargetRGB32F; //32 bit hdr format without alpha
 #include "D4SCO/ui.fxh"
 
 /* -------------------------------------------------------------------------- */
-/*                                     UI                                     */
+/*                                    PARTS                                   */
 /* -------------------------------------------------------------------------- */
+
+/* ----------------------------------- UI ----------------------------------- */
 
 UI_HEAD("Effects")
 
@@ -129,7 +131,42 @@ UI_FLOAT(fRedWidth, "Red: Base Width", 0.0, 360.0, 135.0)
 UI_FLOAT(fRedPivot, "Red: Pivot Point", 0.0, 0.5, 0.03)
 UI_FLOAT(fRedScale, "Red: Scale", 0.0, 2.0, 0.82)
 
+UI_BLNK(4)
+
+UI_CTGR(2, "AGCC Settings")
+UI_SPLT(2)
+UI_BOOL(bUseAGCC, "Enable AGCC", false)
+UI_FLOAT(fAGCCSatMult, "AGCC Saturation Multiplier", 0.0, 2.0, 1.0)
+UI_FLOAT(fAGCCConMult, "AGCC Contrast Multiplier", 0.0, 2.0, 1.0)
+UI_FLOAT(fAGCCBrtMult, "AGCC Brightness Multiplier", 0.0, 2.0, 1.0)
+UI_FLOAT(fAGCCTintMult, "AGCC Tint Multiplier", 0.0, 2.0, 1.0)
+UI_FLOAT(fAGCCFadeMult, "AGCC Fade Multiplier", 0.0, 2.0, 1.0)
+
 #include "D4SCO/debug.fxh"
+
+/* -------------------------------- Functions ------------------------------- */
+
+float3 applyAGCC(float3 color)
+{
+  float gameSaturation = Params01[3].x * fAGCCSatMult;
+  float gameContrast = Params01[3].z * fAGCCConMult;
+  float gameBrightness = Params01[3].w * fAGCCBrtMult;
+
+  float3 gameTintColor = applyIDTtoAP1(Params01[4].rgb);
+  float3 gameFadeColor = applyIDTtoAP1(Params01[5].rgb);
+  float gameTintWeight = Params01[4].a * fAGCCTintMult;
+  float gameFadeWeight = Params01[5].a * fAGCCFadeMult;
+
+  float grey = dot(color, LUM_AP1);
+  float3 middle = float3(0.5, 0.5, 0.5);
+
+  color = lerp(grey, color, gameSaturation);
+  color = lerp(middle, color, gameContrast) * gameBrightness;
+  color = lerp(color, grey * gameTintColor, gameTintWeight);
+  color = lerp(color, gameFadeColor, gameFadeWeight);
+
+  return color;
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                   SHADERS                                  */
@@ -147,6 +184,9 @@ float4	PS_Draw(float4 pos : SV_POSITION, float2 txcoord: TEXCOORD0) : SV_TARGET
       applyIDTtoAP0(color, fIDTExposureMultiplier) :
       applyIDTtoAP1(color, fIDTExposureMultiplier);
 
+    if (bUseAGCC)
+      color = applyAGCC(color);
+
     color = applyRRT(	
       color,
       iAcesColorspace,
@@ -163,7 +203,7 @@ float4	PS_Draw(float4 pos : SV_POSITION, float2 txcoord: TEXCOORD0) : SV_TARGET
     color = applyPartialODT(color, iAcesColorspace, fODTSatFactor);
     color = sRGBltosRGB(color);
   }
-  return float4(saturate(color), 1.0);
+  return debug(float4(saturate(color), 1.0));
 }
 
 // NOTE Vanilla shader, do not modify
