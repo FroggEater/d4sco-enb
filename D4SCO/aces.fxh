@@ -84,16 +84,16 @@ float3 applyBrighterSurround(float3 color)
 /* ----------------------------------- IDT ---------------------------------- */
 
 // ANCHOR | sRGB > ACES2065-1 | D65 > D60 (Bradford)
-float3 applyIDTtoAP0(float3 color, float preExposure = 1.0)
+float3 applyIDTtoAP0(float3 color, float preExposure = 1.0, bool linearize = true)
 {
-  color = sRGBtosRGBl(color);
+  if (linearize) color = sRGBtosRGBl(color);
   return sRGBltoAP0(color * preExposure);
 }
 
 // ANCHOR | sRGB > ACEScg | D65 > D60 (Bradford)
-float3 applyIDTtoAP1(float3 color, float preExposure = 1.0)
+float3 applyIDTtoAP1(float3 color, float preExposure = 1.0, bool linearize = true)
 {
-  color = sRGBtosRGBl(color);
+  if (linearize) color = sRGBtosRGBl(color);
   return sRGBltoAP1(color * preExposure);
 }
 
