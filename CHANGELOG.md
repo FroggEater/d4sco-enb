@@ -1,10 +1,14 @@
 # 📎 CHANGELOG
 
 ```
-v0.1.0-rc29 > v0.5.0
+v0.1.0-rc29 > v0.6.1
 ```
 
 ## 🚀 FEATURES
+
+#### **[PR#4](https://github.com/FroggEater/d4sco-enb/pull/4) | D4-60: Add AGCC**
+- add weights for game contrast/brightness/saturation influence
+- add weights for game fade/tint influence
 
 #### **[PR#3](https://github.com/FroggEater/d4sco-enb/pull/3) | D4-59: Add simple ACES pipeline**
 - add ACES RRT and ODT48
