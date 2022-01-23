@@ -112,27 +112,10 @@ UI_BLNK(1)
 UI_CTGR(1, "ACES Settings")
 UI_SPLT(1)
 UI_BOOL(bUseAces, "Enable ACES", false)
-UI_BOOL(bUseLinearGamma, "Enable sRGB <> sRGB'", true)
-UI_INT(iAcesColorspace, "AP# Colorspace", 0, 1, 0)
-UI_FLOAT(fIDTExposureMultiplier, "IDT Exposure Pre-multiplier", 0.0, 2.0, 1.0)
-UI_FLOAT(fRRTSatFactor, "RRT Saturation Factor", 0.0, 1.0, 0.96)
-UI_FLOAT(fODTSatFactor, "ODT Saturation Factor", 0.0, 1.0, 0.93)
+UI_BOOL(bAcesUseSweeteners, "Enable ACES Sweeteners", true)
+UI_FLOAT(fAcesExpMult, "ACES pre-exposure", 0.0, 2.0, 1.0)
 
 UI_BLNK(2)
-
-UI_MESG(1, "RRT Specific Settings")
-UI_FLOAT(fYcRadiusWeight, "Glow: Yc Radius Weight", 0.0, 2.0, 1.75)
-UI_FLOAT(fGlowGain, "Glow: Gain Amount", 0.0, 0.5, 0.05)
-UI_FLOAT(fGlowMid, "Glow: Middle Point", 0.0, 0.5, 0.08)
-
-UI_BLNK(3)
-
-UI_FLOAT(fRedHue, "Red: Hue Angle", 0.0, 360.0, 0.0)
-UI_FLOAT(fRedWidth, "Red: Base Width", 0.0, 360.0, 135.0)
-UI_FLOAT(fRedPivot, "Red: Pivot Point", 0.0, 0.5, 0.03)
-UI_FLOAT(fRedScale, "Red: Scale", 0.0, 2.0, 0.82)
-
-UI_BLNK(4)
 
 UI_CTGR(2, "AGCC Settings")
 UI_SPLT(2)
@@ -177,36 +160,22 @@ float3 applyAGCC(float3 color)
 
 /* ---------------------------------- Pixel --------------------------------- */
 
-float4	PS_Draw(float4 pos : SV_POSITION, float2 txcoord: TEXCOORD0) : SV_TARGET
+float4 PS_Draw(float4 pos : SV_POSITION, float2 txcoord : TEXCOORD0) : SV_TARGET
 {
   float3 color = TextureColor.Sample(PointSampler, txcoord.xy).rgb;
 
   if (bUseAces)
   {
-    color = iAcesColorspace == 0 ?
-      applyIDTtoAP0(color, fIDTExposureMultiplier, bUseLinearGamma) :
-      applyIDTtoAP1(color, fIDTExposureMultiplier, bUseLinearGamma);
+    color = applyIDT(color, fAcesExpMult);
 
     if (bUseAGCC)
       color = applyAGCC(color);
 
-    color = applyRRT(	
-      color,
-      iAcesColorspace,
-      fYcRadiusWeight,
-      fGlowGain,
-      fGlowMid,
-      fRedHue,
-      fRedWidth,
-      fRedPivot,
-      fRedScale,
-      fRRTSatFactor
-    );
-
-    color = applyPartialODT(color, iAcesColorspace, fODTSatFactor);
-    if (bUseLinearGamma) color = sRGBltosRGB(color);
+    color = applyRRT(color, bAcesUseSweeteners);
+    color = applyPartialODT(color);
+    color = sRGBltosRGB(color);
   }
-  return debug(float4(saturate(color), 1.0));
+  return debug(float4(color, 1.0));
 }
 
 // NOTE Vanilla shader, do not modify
