@@ -112,6 +112,7 @@ UI_BLNK(1)
 UI_CTGR(1, "ACES Settings")
 UI_SPLT(1)
 UI_BOOL(bUseAces, "Enable ACES", false)
+UI_BOOL(bUseLinearGamma, "Enable sRGB <> sRGB'", true)
 UI_INT(iAcesColorspace, "AP# Colorspace", 0, 1, 0)
 UI_FLOAT(fIDTExposureMultiplier, "IDT Exposure Pre-multiplier", 0.0, 2.0, 1.0)
 UI_FLOAT(fRRTSatFactor, "RRT Saturation Factor", 0.0, 1.0, 0.96)
@@ -136,11 +137,11 @@ UI_BLNK(4)
 UI_CTGR(2, "AGCC Settings")
 UI_SPLT(2)
 UI_BOOL(bUseAGCC, "Enable AGCC", false)
-UI_FLOAT(fAGCCSatMult, "AGCC Saturation Multiplier", 0.0, 2.0, 1.0)
-UI_FLOAT(fAGCCConMult, "AGCC Contrast Multiplier", 0.0, 2.0, 1.0)
-UI_FLOAT(fAGCCBrtMult, "AGCC Brightness Multiplier", 0.0, 2.0, 1.0)
-UI_FLOAT(fAGCCTintMult, "AGCC Tint Multiplier", 0.0, 2.0, 1.0)
-UI_FLOAT(fAGCCFadeMult, "AGCC Fade Multiplier", 0.0, 2.0, 1.0)
+UI_FLOAT(fAGCCSatWeight, "AGCC Saturation Weight", 0.0, 1.0, 1.0)
+UI_FLOAT(fAGCCConWeight, "AGCC Contrast Weight", 0.0, 1.0, 1.0)
+UI_FLOAT(fAGCCBrtWeight, "AGCC Brightness Weight", 0.0, 1.0, 1.0)
+UI_FLOAT(fAGCCTintWeight, "AGCC Tint Weight", 0.0, 1.0, 1.0)
+UI_FLOAT(fAGCCFadeWeight, "AGCC Fade Weight", 0.0, 1.0, 1.0)
 
 #include "D4SCO/debug.fxh"
 
@@ -148,21 +149,23 @@ UI_FLOAT(fAGCCFadeMult, "AGCC Fade Multiplier", 0.0, 2.0, 1.0)
 
 float3 applyAGCC(float3 color)
 {
-  float gameSaturation = Params01[3].x * fAGCCSatMult;
-  float gameContrast = Params01[3].z * fAGCCConMult;
-  float gameBrightness = Params01[3].w * fAGCCBrtMult;
+  float gameSaturation = lerp(1.0, Params01[3].x, fAGCCSatWeight);
+  float gameBrightness = lerp(1.0, Params01[3].w, fAGCCBrtWeight);
+  float gameContrast = lerp(1.0, Params01[3].z, fAGCCConWeight);
 
   float3 gameTintColor = applyIDTtoAP1(Params01[4].rgb);
   float3 gameFadeColor = applyIDTtoAP1(Params01[5].rgb);
-  float gameTintWeight = Params01[4].a * fAGCCTintMult;
-  float gameFadeWeight = Params01[5].a * fAGCCFadeMult;
+  float gameTintWeight = lerp(0.0, Params01[4].a, fAGCCTintWeight);
+  float gameFadeWeight = lerp(0.0, Params01[5].a, fAGCCFadeWeight);
 
   float grey = dot(color, LUM_AP1);
-  float3 middle = float3(0.5, 0.5, 0.5);
 
   color = lerp(grey, color, gameSaturation);
-  color = lerp(middle, color, gameContrast) * gameBrightness;
-  color = lerp(color, grey * gameTintColor, gameTintWeight);
+  color *= gameBrightness;
+
+  color = lerp(applyIDTtoAP1(MID_SRGB), color, gameContrast);
+
+  color = lerp(color, gameTintColor * grey, gameTintWeight);
   color = lerp(color, gameFadeColor, gameFadeWeight);
 
   return color;
@@ -181,8 +184,8 @@ float4	PS_Draw(float4 pos : SV_POSITION, float2 txcoord: TEXCOORD0) : SV_TARGET
   if (bUseAces)
   {
     color = iAcesColorspace == 0 ?
-      applyIDTtoAP0(color, fIDTExposureMultiplier) :
-      applyIDTtoAP1(color, fIDTExposureMultiplier);
+      applyIDTtoAP0(color, fIDTExposureMultiplier, bUseLinearGamma) :
+      applyIDTtoAP1(color, fIDTExposureMultiplier, bUseLinearGamma);
 
     if (bUseAGCC)
       color = applyAGCC(color);
@@ -201,7 +204,7 @@ float4	PS_Draw(float4 pos : SV_POSITION, float2 txcoord: TEXCOORD0) : SV_TARGET
     );
 
     color = applyPartialODT(color, iAcesColorspace, fODTSatFactor);
-    color = sRGBltosRGB(color);
+    if (bUseLinearGamma) color = sRGBltosRGB(color);
   }
   return debug(float4(saturate(color), 1.0));
 }
