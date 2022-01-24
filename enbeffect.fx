@@ -112,9 +112,6 @@ UI_BLNK(1)
 UI_CTGR(1, "ACES Settings")
 UI_SPLT(1)
 UI_BOOL(bUseAces, "Enable ACES", false)
-UI_BOOL(bAcesUseSweeteners, "Enable ACES Sweeteners", true)
-UI_BOOL(bAcesUseSurroundCompensation, "Enable ACES Brighter Surround", true)
-UI_BOOL(bAcesUseSimpleConversion, "Enable Simple sRGB <> AP conversion", true)
 UI_FLOAT(fAcesExpMult, "ACES pre-exposure", 0.0, 2.0, 1.0)
 
 UI_BLNK(2)
@@ -173,7 +170,7 @@ float4 PS_Draw(float4 pos : SV_POSITION, float2 txcoord : TEXCOORD0) : SV_TARGET
     if (bUseAGCC)
       color = applyAGCC(color);
 
-    color = applyRRT(color, bAcesUseSweeteners);
+    color = applyRRT(color);
     color = applyPartialODT(color);
     color = sRGBltosRGB(color);
   }

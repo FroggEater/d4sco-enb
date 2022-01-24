@@ -125,7 +125,7 @@ float3 applyIDT(float3 color, float exp = 1.0)
 // ANCHOR | ACES (AP0 or AP1) > OCES
 float3 applyRRT(float3 aces)
 {
-  if (ACES_SWEETERNERS)
+  if (ACES_SWEETENERS)
   {
     // Glow correction
     float sat = RGBtoSaturation(aces);
@@ -144,11 +144,13 @@ float3 applyRRT(float3 aces)
   }
 
   // Go from ACES to RGB rendering space
-  aces = clamp(aces, 0.0, HALF_MAX);
+  // aces = clamp(aces, 0.0, HALF_MAX);
+  aces = clamp(aces, 0.0, FLT_MAX);
+
   if (ACES_COLORSPACE == 0)
   {
     aces = AP0toAP1(aces);
-    aces = clamp(aces, 0.0, HALF_MAX);
+    aces = clamp(aces, 0.0, FLT_MAX);
   }
 
   // Global desaturation
