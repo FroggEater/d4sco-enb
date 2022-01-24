@@ -13,6 +13,9 @@
 
 /* -------------------------------- Constants ------------------------------- */
 
+static const float ACES_MIN = pow(2.0, -14.0);
+static const float OCES_MIN = 1e-4;
+
 static const float3x3 SPLINE_MAT = float3x3(
   0.5, -1.0, 0.5,
   -1.0, 1.0, 0.5,
@@ -98,7 +101,8 @@ float applySegmentedSplineC5(float x, SegmentedSplineC5Params p)
   static const int KNOTS_LOW = 4;
   static const int KNOTS_HIGH = 4;
 
-  float logx = log10(max(x, D10));
+  x = x <= 0 ? ACES_MIN : x;
+  float logx = log10(x);
   float logy;
 
   if (logx <= log10(p.minPoint.x))
@@ -138,7 +142,8 @@ float applySegmentedSplineC9(float x, SegmentedSplineC9Params p)
   static const int KNOTS_LOW = 8;
   static const int KNOTS_HIGH = 8;
 
-  float logx = log10(max(x, D10));
+  x = x <= 0 ? OCES_MIN : x;
+  float logx = log10(x);
   float logy;
 
   if (logx <= log10(p.minPoint.x))
