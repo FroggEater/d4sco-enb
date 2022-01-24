@@ -17,6 +17,9 @@
 /* -------------------------------- Constants ------------------------------- */
 
 static const uint ACES_COLORSPACE = 1;
+static const bool ACES_SWEETENERS = false;
+static const bool ACES_SURROUND = false;
+static const bool ACES_SIMPLE_TRANSFORM = true;
 
 static const float RRT_GLOW_GAIN = 0.05;
 static const float RRT_GLOW_MID = 0.08;
@@ -101,17 +104,28 @@ float3 applyIDT(float3 color, float exp = 1.0)
   color = sRGBtosRGBl(color);
   color *= exp;
 
-  return ACES_COLORSPACE == 0 ?
-    sRGBltoAP0(color) :
-    sRGBltoAP1(color);
+  if (ACES_SIMPLE_TRANSFORM)
+  {
+    return ACES_COLORSPACE == 0 ?
+      sRGBltoAP0(color) :
+      sRGBltoAP1(color);
+  }
+  else
+  {
+    color = sRGBltoXYZ(color);
+    color = D65toD60(color);
+    return ACES_COLORSPACE == 0 ?
+      XYZtoAP0(color) :
+      XYZtoAP1(color);
+  }
 }
 
 /* ----------------------------------- RRT ---------------------------------- */
 
 // ANCHOR | ACES (AP0 or AP1) > OCES
-float3 applyRRT(float3 aces, bool sweeteners = true)
+float3 applyRRT(float3 aces)
 {
-  if (sweeteners)
+  if (ACES_SWEETERNERS)
   {
     // Glow correction
     float sat = RGBtoSaturation(aces);
@@ -178,13 +192,19 @@ float3 applyPartialODT(float3 oces)
   );
 
   // Compensate for a dimmer surround
-  oces = applyBrighterSurround(oces);
+  if (ACES_SURROUND) oces = applyBrighterSurround(oces);
 
   // Global desaturation to compensate for luminance differences
   oces = lerp(dot(oces, LUM_AP1), oces, ODT_SAT_FACTOR);
 
   // Go back to sRGB' and return
-  oces = AP1tosRGBl(oces);
+  if (ACES_SIMPLE_TRANSFORM)
+    oces = AP1tosRGBl(oces);
+  else {
+    oces = AP1toXYZ(oces);
+    oces = D60toD65(oces);
+    oces = XYZtosRGBl(oces);
+  }
   return saturate(oces);
 }
 
