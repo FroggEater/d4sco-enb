@@ -24,7 +24,7 @@
       "pattern": "v([0-9]+[.][0-9]+[.][0-9]+){1}"
     }
   },
-  "pr_template": "#### **[PR#${{NUMBER}}](${{URL}}) | ${{TITLE}}**\n${{BODY}}\n",
+  "pr_template": "#### **[PR#${{NUMBER}}](${{URL}}) | ${{TITLE}}**\n",
   "template": "# 📎 CHANGELOG\n\n```\n${{FROM_TAG}} > ${{TO_TAG}}\n```\n\n${{CHANGELOG}}\n",
   "max_pull_requests": 1000,
   "max_back_track_time_days": 1000
