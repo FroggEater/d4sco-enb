@@ -116,8 +116,20 @@ UI_FLOAT(fAcesExpMult, "ACES pre-exposure", 0.0, 2.0, 1.0)
 
 UI_BLNK(2)
 
-UI_CTGR(2, "AGCC Settings")
+UI_CTGR(2, "FDM Settings")
 UI_SPLT(2)
+UI_BOOL(bUseFDM, "Enable Frostbite Display Mapper", false)
+UI_BOOL(bFDMUseRGBtoLMS, "Enable Simple RGB to LMS", false)
+UI_FLOAT(fFDMMaxPQMult, "FDM Max PQ Multiplier", 0.0, 2.0, 1.0)
+UI_FLOAT(fFDMCrossTalk, "FDM Cross-Talk Percent", 0.0, 0.5, 0.0)
+UI_FLOAT(fFDMDesatAmount, "FDM Desaturation Amount", 0.0, 1.0, 0.7)
+UI_FLOAT(fFDMHueShiftAmount, "FDM Hue Shift Amount", 0.0, 1.0, 0.4)
+UI_FLOAT(fFDMResatAmount, "FDM Resaturation Amount", 0.0, 1.0, 0.3)
+
+UI_BLNK(3)
+
+UI_CTGR(3, "AGCC Settings")
+UI_SPLT(3)
 UI_BOOL(bUseAGCC, "Enable AGCC", false)
 UI_FLOAT(fAGCCSatWeight, "AGCC Saturation Weight", 0.0, 1.0, 1.0)
 UI_FLOAT(fAGCCConWeight, "AGCC Contrast Weight", 0.0, 1.0, 1.0)
@@ -153,6 +165,56 @@ float3 applyAGCC(float3 color)
   return color;
 }
 
+float3 applyTonemap(float3 color)
+{
+  color = applyRRT(color);
+  color = applyPartialODT(color);
+
+  return color;
+}
+
+float3 applyFDM(float3 color)
+{
+  // float3 ictcp = rgb2ictcp(color.xyz);
+  // float saturation = pow(smoothstep(1.0, 1.0 - Desaturation, ictcp.x), 1.3);
+  // color.xyz = ictcp2rgb(ictcp * float3(1.0, saturation.xx));
+  // float3 perChannel = applyTonemap(color.xyz);
+  // float peak = max(color.x, max(color.y, color.z));
+  // color.xyz *= rcp(peak + 1e-6);
+  // color.xyz *= applyTonemap(peak);
+  // color.xyz = lerp(color.xyz, perChannel, HueShift);
+  // color.xyz = rgb2ictcp(color.xyz);
+  // float saturationBoost = Resaturation * smoothstep(1.0, 0.5, ictcp.x);
+  // color.yz = lerp(color.yz, ictcp.yz * color.x / max(1e-3, ictcp.x), saturationBoost);
+  // color.yz *= Saturation;
+  // color.xyz = ictcp2rgb(color.xyz);
+  // return color;
+
+  float3 ictcp = AP1toiCtCp(color, bFDMUseRGBtoLMS, fFDMCrossTalk, fFDMMaxPQMult);
+
+  float sat = pow(smoothstep(1.0, 1.0 - fFDMDesatAmount, ictcp.x), 1.3);
+
+  color = iCtCptoAP1(ictcp * float3(1.0, sat.xx), bFDMUseRGBtoLMS, fFDMMaxPQMult);
+
+  float3 channels = applyTonemap(color);
+
+  float peak = max3(color);
+  color *= rcp(peak + D10);
+  color *= applyTonemap(peak);
+
+  color = lerp(color, channels, fFDMHueShiftAmount);
+  color = AP1toiCtCp(color, bFDMUseRGBtoLMS, fFDMCrossTalk, fFDMMaxPQMult);
+
+  float satBoost = fFDMResatAmount * smoothstep(1.0, 0.5, ictcp.x);
+  color.yz = lerp(color.yx, ictcp.yz * color.x / max(D10, ictcp.x), satBoost);
+  color.yz *= sat;
+
+  color = iCtCptoAP1(color, bFDMUseRGBtoLMS, fFDMMaxPQMult);
+  color = AP1tosRGBl(color);
+
+  return color;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                   SHADERS                                  */
 /* -------------------------------------------------------------------------- */
@@ -170,8 +232,7 @@ float4 PS_Draw(float4 pos : SV_POSITION, float2 txcoord : TEXCOORD0) : SV_TARGET
     if (bUseAGCC)
       color = applyAGCC(color);
 
-    color = applyRRT(color);
-    color = applyPartialODT(color);
+    color = bUseFDM ? applyFDM(color) : applyTonemap(color);
     color = sRGBltosRGB(color);
   }
   return debug(float4(color, 1.0));

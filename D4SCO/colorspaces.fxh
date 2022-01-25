@@ -13,6 +13,12 @@
 
 /* -------------------------------- Constants ------------------------------- */
 
+static const float PQ_N = (2610.0 / 4096.0 / 4.0);
+static const float PQ_M = (2523.0 / 4096.0 * 128.0);
+static const float PQ_C1 = (3424.0 / 4096.0);
+static const float PQ_C2 = (2413.0 / 4096.0 * 32.0);
+static const float PQ_C3 = (2392.0 / 4096.0 * 32.0);
+
 static const float3 LUM_AP1 = float3(0.272228716780915, 0.674081765811148, 0.053689517407937);
 static const float3 LUM_709 = float3(0.212639005871510, 0.715168678767756, 0.072192315360734);
 static const float3 MID_SRGB = float3(0.5, 0.5, 0.5);
@@ -61,6 +67,70 @@ float3 XYZtosRGBl(float3 color)
   return mul(mat, color);
 }
 
+// ANCHOR | sRGB' <> LMS | Rec. 709 | D65
+// From Unity color utilities
+float3 sRGBltoLMS(float3 color)
+{
+  static const float3x3 mat = float3x3(
+    0.390405, 0.549941, 0.00892632,
+    0.0708416, 0.963172, 0.00135775,
+    0.0231082, 0.128021, 0.936245
+  );
+  return mul(mat, color);
+}
+float3 LMStosRGBl(float3 color)
+{
+  static const float3x3 mat = float3x3(
+    2.85847, -1.62879, -0.0248910,
+    -0.210182,  1.15820,  0.000324281,
+    -0.0418120, -0.118169,  1.06867
+  );
+  return mul(mat, color);
+}
+
+/* ---------------------------- Dolby Transforms ---------------------------- */
+
+// ANCHOR | LMS (Linear) <> LMS (PQ)
+float3 LMStoLMSpq(float3 color, float maxPQ = 100.0)
+{
+  color *= (1.0 / maxPQ);
+
+  float3 powColor = pow(color, PQ_N);
+  float3 num = PQ_C1 + PQ_C2 * powColor;
+  float3 den = 1.0 + PQ_C3 * powColor;
+
+  return pow(num / den, PQ_M);
+}
+float3 LMSpqtoLMS(float3 color, float maxPQ = 100.0)
+{
+  float3 powColor = pow(color, 1.0 / PQ_M);
+  float3 num = max(powColor - PQ_C1, 0.0);
+  float3 den = PQ_C2 - PQ_C3 * powColor;
+
+  color = pow(num / den, 1.0 / PQ_N);
+  return color * maxPQ;
+}
+
+// ANCHOR | LMS (PQ) <> iCtCp
+float3 LMSpqtoiCtCp(float3 color)
+{
+  static const float3x3 mat = float3x3(
+    0.500000000000, 0.500000000000, 0.000000000000,
+    1.613769531250, -3.323486328125, 1.709716796875,
+    4.378173828125, -4.245605468750, -0.132568359375
+  );
+  return mul(mat, color);
+}
+float3 iCtCptoLMSpq(float3 color)
+{
+  static const float3x3 mat = float3x3(
+    1.0,	0.008609037037933,	0.111029625003026,
+    1.0,	-0.008609037037933,	-0.111029625003026,
+    1.0,	0.560031335710679,	-0.320627174987319
+  );
+  return mul(mat, color);
+}
+
 /* ----------------------------- CIE Transforms ----------------------------- */
 
 // ANCHOR | XYZ <> xyY
@@ -81,6 +151,31 @@ float3 xyYtoXYZ(float3 color)
     color.z,
     (1.0 - color.x - color.y) * color.z / max(color.y, D10)
   );
+}
+
+// ANCHOR | XYZ <> LMS | D65
+float3 XYZtoLMS(float3 color, float c = 0.0)
+{
+  static const float3x3 mat = float3x3(
+    0.4002, 0.7076, -0.0808,
+    -0.2263, 1.1653, 0.0457,
+    0.0000, 0.0000, 0.9182
+  );
+  float3x3 ct = float3x3(
+    1.0 - 2.0 * c, c, c,
+    c, 1.0 - 2.0 * c, c,
+    c, c, 1.0 - 2.0 * c
+  );
+  return mul(mul(ct, mat), color);
+}
+float3 LMStoXYZ(float3 color)
+{
+  static const float3x3 mat = float3x3(
+    1.860066612508235,	-1.129480078100770,	0.219898303049304,
+    0.361222924921148,	0.638804306466829,	-0.000007127501530,
+    0.000000000000000,	0.000000000000000,	1.089087344805053
+  );
+  return mul(mat, color);
 }
 
 /* ----------------------------- ACES Transforms ---------------------------- */
@@ -205,6 +300,47 @@ float3 D60toD65(float3 color)
     0.00307257, -0.00509595, 1.08168
   );
   return mul(mat, color);
+}
+
+/* --------------------------- Combined Transforms -------------------------- */
+
+// ANCHOR | AP1 <> iCtCp | D60 <> D65
+float3 AP1toiCtCp(float3 color, bool fromRGB = false, float c = 0.0, float pq = 1.0)
+{
+  if (fromRGB)
+  {
+    color = AP1tosRGBl(color);
+    color = sRGBltoLMS(color);
+  }
+  else
+  {
+    color = AP1toXYZ(color);
+    color = D60toD65(color);
+    color = XYZtoLMS(color, c);
+  }
+  color = LMStoLMSpq(color, pq * 100.0);
+  color = LMSpqtoiCtCp(color);
+
+  return color;
+}
+
+float3 iCtCptoAP1(float3 color, bool fromRGB = false, float pq = 1.0)
+{
+  color = iCtCptoLMSpq(color);
+  color = LMSpqtoLMS(color, pq * 100.0);
+  if (fromRGB)
+  {
+    color = LMStosRGBl(color);
+    color = sRGBltoAP1(color);
+  }
+  else
+  {
+    color = LMStoXYZ(color);
+    color = D65toD60(color);
+    color = XYZtoAP1(color);
+  }
+
+  return color;
 }
 
 #endif
