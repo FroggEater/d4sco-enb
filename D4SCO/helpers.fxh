@@ -16,6 +16,8 @@ static const float HALF_MIN = 6.10352e-5;
 static const float FLT_MAX = 3.402823466e+38;
 // static const float HALF_MIN = exp2(-14.0);
 
+static const float D12 = 1e-12;
+static const float D11 = 1e-11;
 static const float D10 = 1e-10;
 static const float D9 = 1e-9;
 static const float D8 = 1e-8;
@@ -76,10 +78,13 @@ bool ext2(float2 v, float mi, float ma) { return ext(v.x, mi, ma) && ext(v.y, mi
 bool ext3(float3 v, float mi, float ma) { return ext2(v.xy, mi, ma) && ext(v.z, mi, ma); }
 bool ext4(float4 v, float mi, float ma) { return ext3(v.xyz, mi, ma) && ext(v.w, mi, ma); }
 
-// Reurns true if all the elements of the given vector are equal
+// Returns true if all the elements of the given vector are equal
 bool same2(float2 v) { return v.x == v.y; }
 bool same3(float3 v) { return (v.x == v.y) && (v.y == v.z); }
 bool same4(float4 v) { return (v.x == v.y) && (v.y == v.z) && (v.z == v.w); }
+
+float hypot(float a, float b) { return sqrt(a * a + b * b); }
+float hypot2(float2 v) { return hypot(v.x, v.y); }
 
 /* ------------------------------- Techniques ------------------------------- */
 

@@ -112,7 +112,11 @@ UI_BLNK(1)
 UI_CTGR(1, "ACES Settings")
 UI_SPLT(1)
 UI_BOOL(bUseAces, "Enable ACES", false)
-UI_FLOAT(fAcesExpMult, "ACES pre-exposure", 0.0, 2.0, 1.0)
+UI_FLOAT(fAcesExpMult, "ACES Pre-Exposure", 0.0, 2.0, 1.0)
+UI_FLOAT(fAcesRRTSatFactor, "ACES Pre-Transform Saturation", 0.0, 2.0, 0.96)
+UI_FLOAT(fAcesODTSatFactor, "ACES Post-Transform Saturation", 0.0, 2.0, 0.93)
+UI_FLOAT(fAcesGlowMid, "ACES Glow Mid", 0.0, 1.0, 0.08)
+UI_FLOAT(fAcesGlowGain, "ACES Glow Gain", 0.0, 1.0, 0.05)
 
 UI_BLNK(2)
 
@@ -164,8 +168,8 @@ float3 applyAGCC(float3 color)
 
 float3 applyTonemap(float3 color)
 {
-  color = applyRRT(color);
-  color = applyPartialODT(color);
+  color = applyRRT(color, fAcesGlowGain, fAcesGlowMid, fAcesRRTSatFactor);
+  color = applyPartialODT(color, fAcesODTSatFactor);
 
   return color;
 }

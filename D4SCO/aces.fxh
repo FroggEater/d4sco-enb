@@ -17,7 +17,7 @@
 /* -------------------------------- Constants ------------------------------- */
 
 static const uint ACES_COLORSPACE = 1;
-static const bool ACES_SWEETENERS = false;
+static const bool ACES_SWEETENERS = true;
 static const bool ACES_SURROUND = false;
 static const bool ACES_SIMPLE_TRANSFORM = true;
 
@@ -123,15 +123,15 @@ float3 applyIDT(float3 color, float exp = 1.0)
 /* ----------------------------------- RRT ---------------------------------- */
 
 // ANCHOR | ACES (AP0 or AP1) > OCES
-float3 applyRRT(float3 aces)
+float3 applyRRT(float3 aces, float glowGain = RRT_GLOW_GAIN, float glowMid = RRT_GLOW_MID, float sat = RRT_SAT_FACTOR)
 {
   if (ACES_SWEETENERS)
   {
     // Glow correction
-    float sat = RGBtoSaturation(aces);
+    float saturation = RGBtoSaturation(aces);
     float yc = RGBtoYc(aces);
-    float s = sigmoidShaper((sat - 0.4) / 0.2);
-    float glow = 1.0 + computeGlow(yc, RRT_GLOW_GAIN * s, RRT_GLOW_MID);
+    float s = sigmoidShaper((saturation - 0.4) / 0.2);
+    float glow = 1.0 + computeGlow(yc, glowGain * s, glowMid);
 
     aces *= glow;
 
@@ -140,7 +140,7 @@ float3 applyRRT(float3 aces)
     float centeredHue = centerHue(hue, RRT_RED_HUE);
     float hueWeight = cubicBasisShaper(centeredHue, RRT_RED_WIDTH);
 
-    aces.r += hueWeight * sat * (RRT_RED_PIVOT - aces.r) * (1.0 - RRT_RED_SCALE);
+    aces.r += hueWeight * saturation * (RRT_RED_PIVOT - aces.r) * (1.0 - RRT_RED_SCALE);
   }
 
   // Go from ACES to RGB rendering space
@@ -154,7 +154,7 @@ float3 applyRRT(float3 aces)
   }
 
   // Global desaturation
-  aces = lerp(dot(aces, LUM_AP1), aces, RRT_SAT_FACTOR);
+  aces = lerp(dot(aces, LUM_AP1), aces, sat);
 
   // Apply tonescale for each channel
   aces = float3(
@@ -174,7 +174,7 @@ float3 applyRRT(float3 aces)
 /* ----------------------------------- ODT ---------------------------------- */
 
 // ANCHOR | OCES > sRGB' | D60 > D65
-float3 applyPartialODT(float3 oces)
+float3 applyPartialODT(float3 oces, float sat = ODT_SAT_FACTOR)
 {
   if (ACES_COLORSPACE == 0)
     oces = AP0toAP1(oces);
@@ -197,7 +197,7 @@ float3 applyPartialODT(float3 oces)
   if (ACES_SURROUND) oces = applyBrighterSurround(oces);
 
   // Global desaturation to compensate for luminance differences
-  oces = lerp(dot(oces, LUM_AP1), oces, ODT_SAT_FACTOR);
+  oces = lerp(dot(oces, LUM_AP1), oces, sat);
 
   // Go back to sRGB' and return
   if (ACES_SIMPLE_TRANSFORM)
