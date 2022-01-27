@@ -243,7 +243,13 @@ float3 applyRRT(
 /* ----------------------------------- ODT ---------------------------------- */
 
 // ANCHOR | OCES > sRGB' | D60 > D65
-float3 applyPartialODT(float3 oces, bool nayatani = false, float sat = ODT_SAT_FACTOR)
+float3 applyPartialODT(
+  float3 oces,
+  bool nayatani = false,
+  float lum = 0.5,
+  float shift = 0.0872,
+  float sat = ODT_SAT_FACTOR
+)
 {
   if (ACES_COLORSPACE == 0)
     oces = AP0toAP1(oces);
@@ -269,7 +275,7 @@ float3 applyPartialODT(float3 oces, bool nayatani = false, float sat = ODT_SAT_F
   oces = lerp(dot(oces, LUM_AP1), oces, sat);
 
   if (nayatani)
-    oces = applyNayataniModel(oces);
+    oces = applyNayataniModel(oces, lum, shift);
 
   // Go back to sRGB' and return
   if (ACES_SIMPLE_TRANSFORM)

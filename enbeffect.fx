@@ -186,6 +186,7 @@ float3 applyTonemap(float3 color)
 {
   color = applyRRT(
     color,
+    bUseAcesSweeteners,
     fAcesGlowGain,
     fAcesGlowMid,
     fAcesRRTSatFactor,
@@ -199,6 +200,8 @@ float3 applyTonemap(float3 color)
   color = applyPartialODT(
     color,
     bUseNayatani,
+    fHKLuminance,
+    fHKShift,
     fAcesODTSatFactor
   );
 
