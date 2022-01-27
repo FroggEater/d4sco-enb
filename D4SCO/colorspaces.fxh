@@ -23,6 +23,8 @@ static const float3 LUM_AP1 = float3(0.272228716780915, 0.674081765811148, 0.053
 static const float3 LUM_709 = float3(0.212639005871510, 0.715168678767756, 0.072192315360734);
 static const float3 MID_SRGB = float3(0.5, 0.5, 0.5);
 
+static const float2 WP_65 = float2(0.3127, 0.329);
+
 /* ---------------------------- Common Transforms --------------------------- */
 
 // ANCHOR | sRGB <> sRGB' | Rec. 709 | D65
@@ -120,7 +122,6 @@ float3 XYZtoLMS(float3 color)
     -0.1922, 1.1004, 0.0755,
     0.0070, 0.0749, 0.8434
   );
-
   return mul(mat, color);
 }
 float3 LMStoXYZ(float3 color)
@@ -130,8 +131,22 @@ float3 LMStoXYZ(float3 color)
     0.36498825003265756, 0.68046736285223520, -0.045421753075853236,
     -0.04959554223893212, -0.04942116118675749, 1.187995941732803400
   );
-
   return mul(mat, color);
+}
+
+// ANCHOR | XYZ <> Luv | D65
+float3 XYZtoLuv(float3 color)
+{
+  static const float e = 216.0 / 24389.0;
+  static const float k = 24389.0 / 27.0;
+
+  float den = color.x + 15.0 * color.y + 3.0 * color.z;
+
+  return float3(
+    color.y > e ? 116.0 * pow(color.y, 1.0 / 3.0) - 16.0 : k * color.y,
+    den == 0.0 ? 0.0 : 4.0 * color.x / den,
+    den == 0.0 ? 0.0 : 9.0 * color.y / den 
+  );
 }
 
 /* ----------------------------- ACES Transforms ---------------------------- */

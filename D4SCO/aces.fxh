@@ -23,16 +23,33 @@ static const bool ACES_SIMPLE_TRANSFORM = true;
 
 static const float RRT_GLOW_GAIN = 0.05;
 static const float RRT_GLOW_MID = 0.08;
+
+static const float RRT_HUE_WIDTH = 135.0;
 static const float RRT_RED_HUE = 0.0;
-static const float RRT_RED_WIDTH = 135.0;
 static const float RRT_RED_PIVOT = 0.03;
 static const float RRT_RED_SCALE = 0.82;
+static const float RRT_GREEN_HUE = 120.0;
+static const float RRT_GREEN_PIVOT = 0.0;
+static const float RRT_GREEN_SCALE = 1.0;
+static const float RRT_BLUE_HUE = 240.0;
+static const float RRT_BLUE_PIVOT = 0.0;
+static const float RRT_BLUE_SCALE = 1.0;
+
 static const float RRT_SAT_FACTOR = 0.96;
 
 static const float ODT_CINEMA_BLACK = 0.02;
 static const float ODT_CINEMA_WHITE = 48.0;
 static const float ODT_SURROUND_GAMMA = 0.9811;
 static const float ODT_SAT_FACTOR = 0.93;
+
+static const float HK_A = 0.03017;
+static const float HK_B = 0.04556;
+static const float HK_C = 0.02667;
+static const float HK_D = 0.00295;
+static const float HK_E = 0.14592;
+static const float HK_F = 0.05084;
+static const float HK_G = 0.01900;
+static const float HK_H = 0.00764;
 
 
 static const SegmentedSplineC5Params C5_PARAMS_RRT =
@@ -96,6 +113,40 @@ float3 applyBrighterSurround(float3 color)
   return color;
 }
 
+float3 applyNayataniModel(float3 color, float lum = 0.5, float shift = 0.0872)
+{
+  static const float den = -2.0 * WP_65.x + 12.0 * WP_65.y + 3.0;
+  static const float2 wpuv = float2(4.0 * WP_65.x / den, 9.0 * WP_65.y / den);
+
+  float3 xyz = AP1toXYZ(color);
+  xyz = D60toD65(color);
+  xyz = clamp(xyz, 0.0, FLT_MAX);
+
+  float3 luv = XYZtoLuv(xyz);
+
+  float mult = -0.866;
+  float K = 0.2717 * (6.469 + 6.362 * pow(lum, 0.4495)) / (6.489 + pow(lum, 0.4495));
+
+  float hue = atan2(luv.z - wpuv.y, luv.y - wpuv.x);
+  hue = hue < 0.0 ? hue + radians(360.0) : hue;
+
+  float q =
+    -0.01585 -
+    HK_A * cos(hue) -
+    HK_B * cos(2.0 * hue) -
+    HK_C * cos(3.0 * hue) -
+    HK_D * cos(4.0 * hue) +
+    HK_E * sin(hue) +
+    HK_F * sin(2.0 * hue) -
+    HK_G * sin(3.0 * hue) -
+    HK_H * sin(4.0 * hue);
+  float suv = 13.0 * hypot(luv.y - wpuv.x, luv.z - wpuv.y);
+  float s = 1.0 + (mult * q + shift * K) * suv;
+  s = s == 0.0 ? 1.0 : 1.0 / s;
+
+  return color * s;
+}
+
 /* ----------------------------------- IDT ---------------------------------- */
 
 // ANCHOR | sRGB > ACES2065-1 or ACEScg | D65 > D60 (Bradford)
@@ -123,9 +174,21 @@ float3 applyIDT(float3 color, float exp = 1.0)
 /* ----------------------------------- RRT ---------------------------------- */
 
 // ANCHOR | ACES (AP0 or AP1) > OCES
-float3 applyRRT(float3 aces, float glowGain = RRT_GLOW_GAIN, float glowMid = RRT_GLOW_MID, float sat = RRT_SAT_FACTOR)
+float3 applyRRT(
+  float3 aces,
+  bool sweeteners = ACES_SWEETENERS,
+  float glowGain = RRT_GLOW_GAIN,
+  float glowMid = RRT_GLOW_MID,
+  float sat = RRT_SAT_FACTOR,
+  float redPivot = RRT_RED_PIVOT,
+  float redScale = RRT_RED_SCALE,
+  float greenPivot = RRT_GREEN_PIVOT,
+  float greenScale = RRT_GREEN_SCALE,
+  float bluePivot = RRT_BLUE_PIVOT,
+  float blueScale = RRT_BLUE_SCALE
+)
 {
-  if (ACES_SWEETENERS)
+  if (sweeteners)
   {
     // Glow correction
     float saturation = RGBtoSaturation(aces);
@@ -135,12 +198,18 @@ float3 applyRRT(float3 aces, float glowGain = RRT_GLOW_GAIN, float glowMid = RRT
 
     aces *= glow;
 
-    // Red correction
+    // Color correction
     float hue = RGBtoHue(aces);
-    float centeredHue = centerHue(hue, RRT_RED_HUE);
-    float hueWeight = cubicBasisShaper(centeredHue, RRT_RED_WIDTH);
+    float redHue = centerHue(hue, RRT_RED_HUE);
+    float greenHue = centerHue(hue, RRT_GREEN_HUE);
+    float blueHue = centerHue(hue, RRT_BLUE_HUE);
+    float redHueWeight = cubicBasisShaper(redHue, RRT_HUE_WIDTH);
+    float greenHueWeight = cubicBasisShaper(greenHue, RRT_HUE_WIDTH);
+    float blueHueWeight = cubicBasisShaper(blueHue, RRT_HUE_WIDTH);
 
-    aces.r += hueWeight * saturation * (RRT_RED_PIVOT - aces.r) * (1.0 - RRT_RED_SCALE);
+    aces.r += redHueWeight * saturation * (redPivot - aces.r) * (1.0 - redScale);
+    aces.g += greenHueWeight * saturation * (greenPivot - aces.g) * (1.0 - greenScale);
+    aces.b += blueHueWeight * saturation * (bluePivot - aces.b) * (1.0 - blueScale);
   }
 
   // Go from ACES to RGB rendering space
@@ -174,7 +243,7 @@ float3 applyRRT(float3 aces, float glowGain = RRT_GLOW_GAIN, float glowMid = RRT
 /* ----------------------------------- ODT ---------------------------------- */
 
 // ANCHOR | OCES > sRGB' | D60 > D65
-float3 applyPartialODT(float3 oces, float sat = ODT_SAT_FACTOR)
+float3 applyPartialODT(float3 oces, bool nayatani = false, float sat = ODT_SAT_FACTOR)
 {
   if (ACES_COLORSPACE == 0)
     oces = AP0toAP1(oces);
@@ -198,6 +267,9 @@ float3 applyPartialODT(float3 oces, float sat = ODT_SAT_FACTOR)
 
   // Global desaturation to compensate for luminance differences
   oces = lerp(dot(oces, LUM_AP1), oces, sat);
+
+  if (nayatani)
+    oces = applyNayataniModel(oces);
 
   // Go back to sRGB' and return
   if (ACES_SIMPLE_TRANSFORM)

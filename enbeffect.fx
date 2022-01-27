@@ -115,10 +115,26 @@ UI_BOOL(bUseAces, "Enable ACES", false)
 UI_FLOAT(fAcesExpMult, "ACES Pre-Exposure", 0.0, 2.0, 1.0)
 UI_FLOAT(fAcesRRTSatFactor, "ACES Pre-Transform Saturation", 0.0, 2.0, 0.96)
 UI_FLOAT(fAcesODTSatFactor, "ACES Post-Transform Saturation", 0.0, 2.0, 0.93)
-UI_FLOAT(fAcesGlowMid, "ACES Glow Mid", 0.0, 1.0, 0.08)
-UI_FLOAT(fAcesGlowGain, "ACES Glow Gain", 0.0, 1.0, 0.05)
 
 UI_BLNK(2)
+
+UI_BOOL(bUseAcesSweeteners, "Enable ACES Sweeteners", true)
+UI_FLOAT(fAcesGlowMid, "ACES Glow Mid", 0.0, 1.0, 0.08)
+UI_FLOAT(fAcesGlowGain, "ACES Glow Gain", 0.0, 1.0, 0.05)
+UI_FLOAT(fAcesRedPivot, "ACES Red Correction Pivot", 0.0, 1.0, 0.03)
+UI_FLOAT(fAcesRedScale, "ACES Red Correction Scale", 0.0, 1.0, 0.82)
+UI_FLOAT(fAcesGreenPivot, "ACES Green Correction Pivot", 0.0, 1.0, 0.0)
+UI_FLOAT(fAcesGreenScale, "ACES Green Correction Scale", 0.0, 1.0, 1.0)
+UI_FLOAT(fAcesBluePivot, "ACES Blue Correction Pivot", 0.0, 1.0, 0.0)
+UI_FLOAT(fAcesBlueScale, "ACES Blue Correction Scale", 0.0, 1.0, 1.0)
+
+UI_BLNK(3)
+
+UI_BOOL(bUseNayatani, "Enable Nayatani HK Model", false)
+UI_FLOAT(fHKLuminance, "Nayatani HK Target Luminance", 0.0, 100.0, 0.5)
+UI_FLOAT(fHKShift, "Nayatani HK Shift Amount", 0.0, 1.0, 0.09)
+
+UI_BLNK(4)
 
 UI_CTGR(2, "FDM Settings")
 UI_SPLT(2)
@@ -127,7 +143,7 @@ UI_FLOAT(fFDMDesatAmount, "FDM Desaturation Amount", 0.0, 1.0, 0.7)
 UI_FLOAT(fFDMHueShiftAmount, "FDM Hue Shift Amount", 0.0, 1.0, 0.4)
 UI_FLOAT(fFDMResatAmount, "FDM Resaturation Amount", 0.0, 1.0, 0.3)
 
-UI_BLNK(3)
+UI_BLNK(5)
 
 UI_CTGR(3, "AGCC Settings")
 UI_SPLT(3)
@@ -168,8 +184,23 @@ float3 applyAGCC(float3 color)
 
 float3 applyTonemap(float3 color)
 {
-  color = applyRRT(color, fAcesGlowGain, fAcesGlowMid, fAcesRRTSatFactor);
-  color = applyPartialODT(color, fAcesODTSatFactor);
+  color = applyRRT(
+    color,
+    fAcesGlowGain,
+    fAcesGlowMid,
+    fAcesRRTSatFactor,
+    fAcesRedPivot,
+    fAcesRedScale,
+    fAcesGreenPivot,
+    fAcesGreenScale,
+    fAcesBluePivot,
+    fAcesBlueScale
+  );
+  color = applyPartialODT(
+    color,
+    bUseNayatani,
+    fAcesODTSatFactor
+  );
 
   return color;
 }
