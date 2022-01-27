@@ -25,7 +25,7 @@
 
 #define ENB_NAME "D4SCO"
 #define ENB_AUTH "by FroggEater"
-#define ENB_VERS "0.6.5"
+#define ENB_VERS "0.8.1"
 
 #define DEF_ISTP 1
 #define DEF_FSTP 0.01
