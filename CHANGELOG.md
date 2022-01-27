@@ -1,10 +1,12 @@
 # 📎 CHANGELOG
 
 ```
-v0.1.0-rc29 > v0.6.5
+v0.1.0-rc29 > v0.8.1
 ```
 
 ## 🚀 FEATURES
+
+#### **[PR#6](https://github.com/FroggEater/d4sco-enb/pull/6) | D4-73: Add ACES extended settings**
 
 #### **[PR#4](https://github.com/FroggEater/d4sco-enb/pull/4) | D4-60: Add AGCC**
 
